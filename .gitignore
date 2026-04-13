@@ -19,11 +19,6 @@ gradle-app.setting
 !gradle-wrapper.jar
 .gradletasknamecache
 
-# Maven (legacy)
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-
 # Environment
 .env
 .env.local

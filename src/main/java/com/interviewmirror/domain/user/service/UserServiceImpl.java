@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CachePut(value = "user", key = "#id")
+    @CacheEvict(value = {"user", "users"}, allEntries = true)
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("User not found", "USER_NOT_FOUND"));

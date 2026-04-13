@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+
+logging:
+  level:
+    root: WARN
+    com.interviewmirror: INFO

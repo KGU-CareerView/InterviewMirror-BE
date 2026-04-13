@@ -1,0 +1,13 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  cache:
+    type: none
+
+logging:
+  level:
+    root: INFO
+    com.interviewmirror: DEBUG
+    org.hibernate.SQL: DEBUG

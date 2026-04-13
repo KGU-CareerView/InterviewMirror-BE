@@ -19,6 +19,9 @@ public class CacheConfig {
                 .entryTtl(Duration.ofMinutes(30))
                 .disableCachingNullValues();
 
-        return RedisCacheManager.create(connectionFactory);
+        return RedisCacheManager.create(RedisCacheManager.RedisCacheManagerBuilder
+                .fromConnectionFactory(connectionFactory)
+                .cacheDefaults(config)
+                .build());
     }
 }

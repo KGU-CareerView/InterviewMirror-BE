@@ -198,6 +198,95 @@ gradlew.bat bootRun --args="--spring.profiles.active=dev"
 
 ---
 
+## Docker Compose로 전체 스택 실행
+
+### 빠른 시작 (권장)
+
+```bash
+# 1. 전체 스택 시작 (MySQL, Redis, Backend)
+docker-compose up -d
+
+# 2. 로그 확인
+docker-compose logs -f backend
+
+# 3. API 테스트
+curl http://localhost:8080/swagger-ui.html
+
+# 4. 멈추기
+docker-compose down
+```
+
+### 개별 서비스 관리
+
+```bash
+# 특정 서비스만 시작
+docker-compose up -d mysql redis
+
+# 또는
+docker-compose up -d backend
+
+# 서비스 상태 확인
+docker-compose ps
+
+# 서비스 로그 보기
+docker-compose logs -f mysql
+docker-compose logs -f redis
+docker-compose logs -f backend
+
+# 데이터 유지하며 서비스 중지
+docker-compose stop
+
+# 데이터 포함하여 전체 삭제
+docker-compose down -v
+```
+
+### Docker 환경 변수
+
+docker-compose.yml에서 설정된 환경 변수:
+
+| 환경변수 | 기본값 | 설명 |
+|---------|--------|------|
+| DB_HOST | mysql | MySQL 호스트명 |
+| DB_PORT | 3306 | MySQL 포트 |
+| DB_NAME | interview_db | 데이터베이스 이름 |
+| DB_USERNAME | interview_user | DB 사용자명 |
+| DB_PASSWORD | interview_password | DB 암호 |
+| REDIS_HOST | redis | Redis 호스트명 |
+| REDIS_PORT | 6379 | Redis 포트 |
+
+### 데이터 관리
+
+```bash
+# MySQL 데이터 확인
+docker-compose exec mysql mysql -uinterview_user -pinterview_password interview_db
+
+# Redis 데이터 확인
+docker-compose exec redis redis-cli
+
+# 데이터베이스 초기화 (전체 삭제)
+docker-compose down -v
+docker-compose up -d
+```
+
+### 문제 해결
+
+```bash
+# MySQL 접속 오류
+docker-compose logs mysql
+
+# Redis 접속 오류
+docker-compose logs redis
+
+# 백엔드 시작 실패
+docker-compose logs backend
+
+# 포트 충돌
+# 포트 변경 후 재시작
+# docker-compose.yml에서 ports 수정
+```
+
+---
+
 ## 개발 환경 설정
 
 ### IDE 설정 (IntelliJ IDEA)

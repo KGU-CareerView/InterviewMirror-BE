@@ -1,5 +1,6 @@
 package com.interviewmirror.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,14 +15,14 @@ import java.time.Duration;
 public class CacheConfig {
 
     @Bean
+    @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis")
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
                 .disableCachingNullValues();
 
-        return RedisCacheManager.create(RedisCacheManager.RedisCacheManagerBuilder
-                .fromConnectionFactory(connectionFactory)
+        return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
-                .build());
+                .build();
     }
 }

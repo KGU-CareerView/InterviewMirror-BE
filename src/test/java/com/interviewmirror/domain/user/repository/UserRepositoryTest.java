@@ -125,6 +125,7 @@ class UserRepositoryTest {
 
         // Act
         userRepository.deleteById(userId);
+        entityManager.flush();
         entityManager.clear();
 
         // Assert

@@ -1,30 +1,32 @@
 spring:
+  config:
+    activate:
+      on-profile: dev
+
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:dev_db;MODE=MySQL
-    username: sa
-    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:interview_db}?serverTimezone=Asia/Seoul
+    username: ${DB_USER:root}
+    password: ${MYSQL_ROOT_PASSWORD}
+
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    database-platform: org.hibernate.dialect.H2Dialect
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
   sql:
     init:
       mode: never
+
   cache:
     type: none
+
   redis:
-    host: localhost
-    port: 6379
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
 
 logging:
   level:

@@ -1,12 +1,11 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.4'
-    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.5.8'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.interviewmirror'
 version = '1.0.0'
-sourceCompatibility = '17'
 
 repositories {
     mavenCentral()
@@ -28,12 +27,12 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // SpringDoc OpenAPI (Swagger)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'com.h2database:h2'
-    testImplementation 'it.ozimov:embedded-redis:0.7.3'
+    testImplementation 'com.redis:testcontainers-redis:2.2.4'
 }
 
 tasks.named('test') {

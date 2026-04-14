@@ -4,7 +4,9 @@ FROM gradle:8.6-jdk17 AS builder
 WORKDIR /build
 
 # 프로젝트 복사
-COPY build.gradle settings.gradle gradle/ ./
+COPY build.gradle settings.gradle ./
+
+# COPY gradle/ ./
 COPY src ./src
 
 # 빌드 (테스트 스킵)

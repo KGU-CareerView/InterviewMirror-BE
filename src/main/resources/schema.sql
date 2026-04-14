@@ -1,8 +1,8 @@
--- Create database if not exists
-CREATE DATABASE IF NOT EXISTS interview_mirror CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE interview_mirror;
-
+-- -- Create database if not exists
+-- CREATE DATABASE IF NOT EXISTS interview_mirror CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+--
+-- USE interview_mirror;
+--
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

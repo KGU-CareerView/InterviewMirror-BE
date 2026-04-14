@@ -5,8 +5,8 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:interview_db}?serverTimezone=Asia/Seoul
-    username: ${DB_USER:root}
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:interview_db}?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Seoul
+    username: ${MYSQL_USER:root}
     password: ${MYSQL_ROOT_PASSWORD}
 
   jpa:

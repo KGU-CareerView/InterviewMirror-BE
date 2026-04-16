@@ -7,7 +7,7 @@ services:
     environment:
       TZ: "Asia/Seoul"
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -24,7 +24,7 @@ services:
     container_name: interview-redis
     command: redis-server --appendonly yes
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -42,7 +42,7 @@ services:
     container_name: interview-backend
     env_file: .env
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       mysql:
         condition: service_healthy

@@ -22,8 +22,8 @@ public class SecurityConfig {
             .cors(cors -> cors.disable())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/swagger-ui/**", "/v1/api-docs/**", "/h2-console/**", "/actuator/health").permitAll()
-                .requestMatchers("/users/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/api-docs/**", "/h2-console/**", "/actuator/health").permitAll()
+                .requestMatchers("/v1/users/**").permitAll()
                 .anyRequest().permitAll()
             );
 

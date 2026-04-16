@@ -36,6 +36,12 @@ spring:
       password: ${REDIS_PASSWORD:}
       timeout: 2000
 
+grpc:
+  client:
+    ai-server:
+      address: 'static://${AI_SERVER_HOST:localhost}:${AI_SERVER_PORT:50051}'
+      negotiation-type: plaintext
+
 logging:
   level:
     root: INFO

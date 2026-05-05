@@ -53,4 +53,12 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
   }
+
+    @ExceptionHandler(InterviewException.class)
+    public ResponseEntity<?> handleCustomException(InterviewException e) {
+        return ResponseEntity.status(e.getErrorCode().getStatus())
+                .body(new ErrorResponse(e.getErrorCode().getCode(), e.getErrorCode().getMessage()));
+    }
+
+    public record ErrorResponse(String code, String message) {}
 }

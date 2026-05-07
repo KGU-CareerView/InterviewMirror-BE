@@ -1,0 +1,42 @@
+syntax = "proto3"; // gRPC 최신 문법인 proto3를 사용합니다.
+
+// --- Java(스프링 부트) 코드 생성 옵션 ---
+option java_multiple_files = true; // 클래스들을 각각의 파일로 쪼개서 생성
+option java_package = "com.interviewmirror.grpc"; // 생성될 자바 클래스의 패키지 경로
+option java_outer_classname = "AiServiceProto";
+
+// 패키지명 (파이썬 서버와 맞추는 식별자 역할)
+package ai;
+
+// 🤖 AI 서버가 제공할 기능(메서드) 정의
+service AiService {
+  // 1. 꼬리 질문 생성 요청 -> 응답
+  rpc GenerateQuestion (QuestionRequest) returns (QuestionResponse);
+
+  // 2. 실시간 감정 분석 요청 -> 응답
+  rpc AnalyzeEmotion (EmotionRequest) returns (EmotionResponse);
+}
+
+// 📦 --- 데이터 구조(DTO) 정의 ---
+
+// [꼬리 질문] 프론트 -> 스프링 부트 -> AI 서버로 보낼 데이터
+message QuestionRequest {
+  int64 session_id = 1;      // 세션 ID (long 타입)
+  string answer = 2;         // 사용자의 답변 텍스트
+}
+
+// [꼬리 질문] AI 서버 -> 스프링 부트로 돌려줄 데이터
+message QuestionResponse {
+  string next_question = 1;  // 생성된 꼬리 질문
+}
+
+// [감정 분석] 프론트 -> 스프링 부트 -> AI 서버로 보낼 데이터
+message EmotionRequest {
+  int64 session_id = 1;      // 세션 ID
+  string face_data = 2;      // 안면 특징점 데이터 (JSON 문자열로 전송)
+}
+
+// [감정 분석] AI 서버 -> 스프링 부트로 돌려줄 데이터
+message EmotionResponse {
+  string emotion_result = 1; // 분석 결과 (예: "Nervous")
+}

@@ -46,3 +46,8 @@ springdoc:
     path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+jwt:
+  #개발용 기본값입니다. 운영/배포 환경에서는 반드시 JWT_SECRET 환경변수로 덮어써야 합니다.
+  secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key-123456789}
+  access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}

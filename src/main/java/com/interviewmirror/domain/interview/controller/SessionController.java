@@ -80,7 +80,7 @@ public class SessionController {
         String fileType = request.getFileType() != null ? request.getFileType() : "video/mp4";
         String ext = fileType.contains("mp4") ? "mp4" : "png";
 
-        String presignedUrl = s3Service.generatePresignedUrl(sessionID, fileType, ext);
+        String presignedUrl = s3Service.generatePresignedUrl(sessionID, fileType);
         
         return ResponseEntity.ok(
                 PresignedUrlResponse.builder()

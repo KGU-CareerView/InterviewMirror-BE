@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_outer_classname = "FeedbackProto";
+option java_package = "com.interviewmirror.grpc.proto";
+
+service EmotionAnalysis {
+  rpc Analyze (AnalyzeRequest) returns (AnalyzeResponse);
+  rpc AnalyzeStream (stream AnalyzeRequest) returns (stream AnalyzeResponse);
+}
+
+message AnalyzeRequest {
+  string session_id = 1;
+  int64 timestamp = 2;
+  bytes cropped_face = 3;       // 크롭된 얼굴 이미지 바이너리
+  bool face_detected = 4;
+  FaceLandmarks landmarks = 5;  // 시선 추적용
+}
+
+message FaceLandmarks {
+  repeated float left_eye = 1;
+  repeated float right_eye = 2;
+  repeated float nose = 3;
+}
+
+message AnalyzeResponse {
+  string session_id = 1;
+  int64 timestamp = 2;
+  string prediction = 3;        // "Stable" / "Nervous" / "Neutral"
+  int32 class_id = 4;
+  float confidence = 5;
+  float stable_prob = 6;
+  float nervous_prob = 7;
+  float neutral_prob = 8;
+}

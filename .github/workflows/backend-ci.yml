@@ -1,0 +1,101 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test-compose:
+    name: Build, test, and Docker Compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Check formatting
+        run: ./gradlew spotlessCheck
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Build application jar
+        run: ./gradlew build -x test
+
+      - name: Create Docker Compose environment
+        run: |
+          cat > .env <<'EOF'
+          SERVER_PORT=8080
+          SPRING_PROFILES_ACTIVE=dev
+          MYSQL_DATABASE=interview_db
+          MYSQL_HOST=mysql
+          MYSQL_PORT=3306
+          MYSQL_ROOT_PASSWORD=interview_ci_password
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          REDIS_PASSWORD=
+          EOF
+
+      - name: Validate Docker Compose config
+        run: docker compose config
+
+      - name: Start Docker Compose services
+        run: docker compose up --build -d
+
+      - name: Verify all 3 containers are running and healthy
+        run: |
+          services=(mysql redis backend)
+
+          for attempt in {1..60}; do
+            all_ready=true
+
+            for service in "${services[@]}"; do
+              container_id="$(docker compose ps -q "$service")"
+
+              if [ -z "$container_id" ]; then
+                echo "$service container has not been created yet"
+                all_ready=false
+                continue
+              fi
+
+              state="$(docker inspect -f '{{.State.Status}}' "$container_id")"
+              health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$container_id")"
+              echo "$service: state=$state health=$health"
+
+              if [ "$state" != "running" ] || [ "$health" != "healthy" ]; then
+                all_ready=false
+              fi
+            done
+
+            if [ "$all_ready" = true ]; then
+              running_count="$(docker compose ps --services --filter status=running | wc -l | tr -d ' ')"
+
+              if [ "$running_count" = "3" ]; then
+                echo "All 3 Docker Compose containers are running and healthy."
+                exit 0
+              fi
+
+              echo "Expected 3 running services, found $running_count"
+            fi
+
+            sleep 5
+          done
+
+          docker compose ps
+          docker compose logs --no-color
+          exit 1
+
+      - name: Stop Docker Compose services
+        if: always()
+        run: docker compose down -v

@@ -481,6 +481,21 @@ private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 // (캐시 미스 시 동시성 문제 방지를 위해 lock 사용)
 ```
 
+#### 자동 포맷터
+
+이 프로젝트는 Spotless와 Google Java Format을 사용하여 Java 코드 스타일을 관리합니다.
+
+```bash
+# Java 코드 자동 포맷 적용
+./gradlew spotlessApply
+
+# 포맷 규칙 검사
+./gradlew spotlessCheck
+```
+
+GitHub Actions에서도 `spotlessCheck`가 실행되므로, PR을 올리기 전에 `spotlessApply`를 먼저 실행하는 것을 권장합니다.
+CI가 포맷 오류로 실패하면 `./gradlew spotlessApply` 실행 후 변경된 파일을 다시 커밋하여 push합니다.
+
 #### 패키지 구조 규칙
 
 ```

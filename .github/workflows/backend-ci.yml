@@ -30,9 +30,12 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
+<<<<<<< HEAD
       - name: Check formatting
         run: ./gradlew spotlessCheck
 
+=======
+>>>>>>> 42f3eb0 (ci: add backend build test and compose smoke check)
       - name: Run tests
         run: ./gradlew test
 

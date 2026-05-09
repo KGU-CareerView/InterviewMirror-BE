@@ -1,5 +1,20 @@
 # gRPC Feedback 도메인 아키텍처 설계
 
+## 현재 연결 상태 메모
+
+- WebSocket → Backend → AI gRPC 스트리밍 연결은 테스트 스크립트 기준 임시로 성공 확인했습니다.
+- 현재 AI 서버 접근은 로컬/개발 환경 제약 때문에 ngrok을 통한 임시 연결입니다.
+- ngrok 연결 사용 시 `AI_SERVER_HOST`, `AI_SERVER_PORT=443`, `GRPC_NEGOTIATION_TYPE=TLS` 설정이 필요합니다.
+- 이 구성은 운영/상시 개발용 최종 구조가 아니며, 추후 AI 서버를 Docker Compose 동일 네트워크 서비스명 또는 내부 DNS/로드밸런서 주소로 연결하도록 수정해야 합니다.
+
+예시:
+
+```env
+AI_SERVER_HOST=cameron-hereditary-suppositively.ngrok-free.dev
+AI_SERVER_PORT=443
+GRPC_NEGOTIATION_TYPE=TLS
+```
+
 ## 1. emotion_analysis.proto 구조
 
 ### 서비스 정의

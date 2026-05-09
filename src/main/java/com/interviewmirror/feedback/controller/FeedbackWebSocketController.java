@@ -14,15 +14,15 @@ import org.springframework.stereotype.Controller;
 @RequiredArgsConstructor
 public class FeedbackWebSocketController {
 
-    private final FeedbackService feedbackService;
+  private final FeedbackService feedbackService;
 
-    @MessageMapping("/feedback.frames")
-    public void analyzeFrame(@Valid @Payload FeedbackFrameRequest request) {
-        feedbackService.analyzeFrame(request);
-    }
+  @MessageMapping("/feedback.frames")
+  public void analyzeFrame(@Valid @Payload FeedbackFrameRequest request) {
+    feedbackService.analyzeFrame(request);
+  }
 
-    @MessageMapping("/feedback.end")
-    public FeedbackSummaryResponse completeSession(@Valid @Payload FeedbackEndRequest request) {
-        return feedbackService.completeSession(request);
-    }
+  @MessageMapping("/feedback.end")
+  public FeedbackSummaryResponse completeSession(@Valid @Payload FeedbackEndRequest request) {
+    return feedbackService.completeSession(request);
+  }
 }

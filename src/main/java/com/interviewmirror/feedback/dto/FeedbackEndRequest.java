@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FeedbackEndRequest {
 
-    @NotBlank(message = "sessionId cannot be blank")
-    private String sessionId;
+  @NotBlank(message = "sessionId cannot be blank")
+  private String sessionId;
 }

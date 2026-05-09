@@ -10,10 +10,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class EmotionAnalysisClient {
 
-    @GrpcClient("ai-server")
-    private InterviewAIServiceGrpc.InterviewAIServiceStub interviewAIServiceStub;
+  @GrpcClient("ai-server")
+  private InterviewAIServiceGrpc.InterviewAIServiceStub interviewAIServiceStub;
 
-    public StreamObserver<FeatureRequest> startAnalysisStream(StreamObserver<AnalysisResponse> responseObserver) {
-        return interviewAIServiceStub.analyzeFrameStream(responseObserver);
-    }
+  public StreamObserver<FeatureRequest> startAnalysisStream(
+      StreamObserver<AnalysisResponse> responseObserver) {
+    return interviewAIServiceStub.analyzeFrameStream(responseObserver);
+  }
 }

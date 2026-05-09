@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class FeedbackResponse {
 
-    private String sessionId;
-    private String userId;
-    private long timestamp;
-    private String label;
-    private float confidence;
-    private String feedback;
-    private boolean faceDetected;
-    private BoundingBoxDto bbox;
+  private String sessionId;
+  private String userId;
+  private long timestamp;
+  private String label;
+  private float confidence;
+  private String feedback;
+  private boolean faceDetected;
+  private BoundingBoxDto bbox;
 }

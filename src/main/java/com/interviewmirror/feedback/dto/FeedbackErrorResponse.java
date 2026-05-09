@@ -1,11 +1,10 @@
 package com.interviewmirror.domain.feedback.dto;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -13,8 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 public class FeedbackErrorResponse {
 
-    private String sessionId;
-    private String message;
-    private String errorCode;
-    private LocalDateTime timestamp;
+  private String sessionId;
+  private String message;
+  private String errorCode;
+  private LocalDateTime timestamp;
 }

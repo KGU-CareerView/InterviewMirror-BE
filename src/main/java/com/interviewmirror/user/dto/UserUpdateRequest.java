@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserUpdateRequest {
 
-    @NotBlank(message = "Name cannot be blank")
-    @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
-    private String name;
+  @NotBlank(message = "Name cannot be blank")
+  @Size(min = 2, max = 255, message = "Name must be between 2 and 255 characters")
+  private String name;
 }

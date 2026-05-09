@@ -7,7 +7,7 @@ import org.springframework.cache.annotation.EnableCaching;
 @SpringBootApplication
 @EnableCaching
 public class InterviewMirrorApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(InterviewMirrorApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(InterviewMirrorApplication.class, args);
+  }
 }

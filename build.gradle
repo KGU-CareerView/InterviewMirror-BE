@@ -70,6 +70,7 @@ dependencies {
     implementation 'io.grpc:grpc-protobuf:1.58.0'
     implementation 'io.grpc:grpc-stub:1.58.0'
     compileOnly 'jakarta.annotation:jakarta.annotation-api:2.1.1' // Java 17 이상 필수
+    compileOnly 'javax.annotation:javax.annotation-api:1.3.2'
     // RabbitMQ 의존성
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
 

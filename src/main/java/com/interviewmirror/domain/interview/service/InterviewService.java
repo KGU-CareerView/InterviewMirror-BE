@@ -18,7 +18,7 @@ public class InterviewService {
 
     private final InterviewResultRepository resultRepository;
 
-    // 8. 결과 조회 로직
+    // 결과 조회 로직
     public String getInterviewResult(Long sessionId) {
         InterviewResult result = resultRepository.findById(sessionId)
                 .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_EXPIRED)); // 조회 실패 시 예외 처리
@@ -36,7 +36,7 @@ public class InterviewService {
         }
     }
 
-    // 9. 사용자 과거 기록 조회 로직
+    // 사용자 과거 기록 조회 로직
     public List<Long> getHistory(Long userId) {
         // 이전에 만들어두신 findByUserId 메서드 활용
         List<InterviewResult> results = resultRepository.findByUserId(userId);

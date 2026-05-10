@@ -41,7 +41,7 @@ public class SessionService {
         InterviewResult savedResult = resultRepository.save(
                 InterviewResult.builder()
                         .userId(userId)
-                        .sessionState("wait")
+                        .sessionState("pause")
                         .createTime(LocalDateTime.now())
                         .build());
 
@@ -49,7 +49,7 @@ public class SessionService {
         Long generatedSessionId = savedResult.getSessionId();
 
         // 3. 발급받은 ID를 사용해 Redis에 상태를 저장합니다.
-        redisSessionService.updateSessionState(generatedSessionId, "wait");
+        redisSessionService.updateSessionState(generatedSessionId, "pause");
 
         // 4. 발급된 ID를 컨트롤러로 반환합니다.
         return generatedSessionId;
@@ -57,21 +57,21 @@ public class SessionService {
 
     @Transactional
     public Long createSession(Long userId) {
-        // 1. DB에 세션 데이터를 먼저 저장하여 AUTO_INCREMENT로 안전하게 발급된 ID를 얻습니다.
+        // DB에 세션 데이터를 먼저 저장하여 AUTO_INCREMENT로 안전하게 발급된 ID를 얻습니다.
         InterviewResult savedResult = resultRepository.save(
                 InterviewResult.builder()
                         .userId(userId)
-                        .sessionState("wait")
+                        .sessionState("pause")
                         .createTime(LocalDateTime.now())
                         .build());
 
-        // 2. DB가 자동 생성해준 안전한 세션 ID를 꺼내옵니다.
+        // DB가 자동 생성해준 안전한 세션 ID를 꺼내옵니다.
         Long generatedSessionId = savedResult.getSessionId();
 
-        // 3. 발급받은 ID를 사용해 Redis에 상태를 저장합니다.
-        redisSessionService.updateSessionState(generatedSessionId, "wait");
+        // 발급받은 ID를 사용해 Redis에 상태를 저장합니다.
+        redisSessionService.updateSessionState(generatedSessionId, "pause");
 
-        // 4. 발급된 ID를 컨트롤러로 반환합니다.
+        // 발급된 ID를 컨트롤러로 반환합니다.
         return generatedSessionId;
     }
 
@@ -105,7 +105,7 @@ public class SessionService {
                     }
                 }
 
-                // 💡 수정됨: DB에 안전하게 옮겨 담았으므로 Redis에 쌓인 문답 리스트는 초기화(삭제)!
+                //  DB에 옮겨 담았으므로 Redis에 쌓인 문답 리스트는 초기화(삭제)
                 redisSessionService.clearQaList(sessionId);
             }
 
@@ -119,14 +119,13 @@ public class SessionService {
 public void processAnswerAndGenerateQuestion(Long sessionId, String answer) {
 
     String question = redisSessionService.getLastQuestion(sessionId);
-    // 💡 수정됨: question이 null일 경우 빈 문자열로 처리하여 Map.of() 에러 방지
     String safeQuestion = (question != null) ? question : "";
 
-    // 1. Redis에 문답 저장 (JSON 직렬화)
+    // Redis에 문답 저장 (JSON 직렬화)
     try {
         String qaJson = objectMapper.writeValueAsString(Map.of(
                 "quizID", System.currentTimeMillis(),
-                "question", safeQuestion, // 👈 안전한 변수 사용
+                "question", safeQuestion,
                 "answer", answer
         ));
         redisSessionService.addQaToRedis(sessionId, qaJson);
@@ -144,17 +143,17 @@ public void processAnswerAndGenerateQuestion(Long sessionId, String answer) {
             return; // 이후 로직(gRPC 호출 등)이 실행되지 않도록 여기서 메서드를 종료합니다.
         }
 
-        // 2. 중복 생성 방지 Lock
+        // 중복 생성 방지 Lock
         if (!redisSessionService.lockQuestionGeneration(sessionId)) return;
 
         try {
-            // 3. gRPC를 통한 AI 질문 생성 요청
+            // gRPC를 통한 AI 질문 생성 요청
             String nextQuestion = aiGrpcClient.generateNextQuestion(sessionId, answer);
 
-            // 잊지 말고 Redis에 방금 만든 이 질문을 저장해 둡니다! (다음 사이클을 위해)
+            // 잊지 말고 Redis에 방금 만든 이 질문을 저장해 둡니다 (다음 사이클을 위해)
             redisSessionService.setLastQuestion(sessionId, nextQuestion);
 
-            // 4. WebSocket으로 프론트엔드에 새 질문 전송
+            // WebSocket으로 프론트엔드에 새 질문 전송
             messagingTemplate.convertAndSend("/topic/session/" + sessionId + "/question", Map.of(
                     "type", "NEXT_QUESTION",
                     "question", nextQuestion

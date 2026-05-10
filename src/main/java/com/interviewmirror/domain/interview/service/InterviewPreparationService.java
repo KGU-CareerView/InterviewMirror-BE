@@ -20,9 +20,7 @@ public class InterviewPreparationService {
     private final InterviewSettingRepository settingRepository;
     private final AiGrpcClient aiGrpcClient;
 
-    /**
-     * 면접 사전설정 저장 로직
-     */
+
     @Transactional
     public Long saveSetting(InterviewSettingRequest request) {
         InterviewSetting setting = InterviewSetting.builder()

@@ -21,41 +21,63 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtTokenProvider jwtTokenProvider;
+  private final UserRepository userRepository;
+  private final BCryptPasswordEncoder passwordEncoder;
+  private final JwtTokenProvider jwtTokenProvider;
 
-    @Transactional
-    public AuthResponse signup(SignupRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new BusinessException("Email already exists", "DUPLICATE_EMAIL");
-        }
-
-        User user = User.builder().email(request.getEmail()).name(request.getName()).passwordHash(passwordEncoder.encode(request.getPassword())).build();
-
-        User savedUser = userRepository.save(user);
-        log.info("User signed up: {}", savedUser.getId());
-
-        return createAuthResponse(savedUser);
+  @Transactional
+  public AuthResponse signup(SignupRequest request) {
+    if (userRepository.existsByEmail(request.getEmail())) {
+      throw new BusinessException("Email already exists", "DUPLICATE_EMAIL");
     }
 
-    public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new BusinessException("Invalid email or password", "INVALID_LOGIN"));
+    User user =
+        User.builder()
+            .email(request.getEmail())
+            .name(request.getName())
+            .passwordHash(passwordEncoder.encode(request.getPassword()))
+            .build();
 
-        if (user.getPasswordHash() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new BusinessException("Invalid email or password", "INVALID_LOGIN");
-        }
+    User savedUser = userRepository.save(user);
+    log.info("User signed up: {}", savedUser.getId());
 
-        return createAuthResponse(user);
+    return createAuthResponse(savedUser);
+  }
+
+  public AuthResponse login(LoginRequest request) {
+    User user =
+        userRepository
+            .findByEmail(request.getEmail())
+            .orElseThrow(() -> new BusinessException("Invalid email or password", "INVALID_LOGIN"));
+
+    if (user.getPasswordHash() == null
+        || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+      throw new BusinessException("Invalid email or password", "INVALID_LOGIN");
     }
 
-    public MeResponse me(CustomUserDetails userDetails) {
-        return MeResponse.builder().id(userDetails.getId()).email(userDetails.getEmail()).name(userDetails.getName()).build();
-    }
+    return createAuthResponse(user);
+  }
 
-    private AuthResponse createAuthResponse(User user) {
-        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+  public MeResponse me(CustomUserDetails userDetails) {
+    return MeResponse.builder()
+        .id(userDetails.getId())
+        .email(userDetails.getEmail())
+        .name(userDetails.getName())
+        .build();
+  }
 
-        return AuthResponse.builder().accessToken(accessToken).tokenType("Bearer").user(AuthResponse.UserInfo.builder().id(user.getId()).email(user.getEmail()).name(user.getName()).build()).build();
-    }
+  private AuthResponse createAuthResponse(User user) {
+    String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+
+    return AuthResponse.builder()
+        .accessToken(accessToken)
+        .tokenType("Bearer")
+        .user(
+            AuthResponse.UserInfo.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .build())
+        .build();
+  }
 }

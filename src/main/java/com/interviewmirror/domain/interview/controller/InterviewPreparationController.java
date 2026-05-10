@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/preparation") // 경로명은 상황에 맞게 변경 가능합니다.
+@RequestMapping("/api/v1/preparation")
 public class InterviewPreparationController {
 
     private final InterviewPreparationService preparationService;

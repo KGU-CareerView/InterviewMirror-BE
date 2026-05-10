@@ -8,13 +8,19 @@ option java_outer_classname = "AiServiceProto";
 // 패키지명 (파이썬 서버와 맞추는 식별자 역할)
 package ai;
 
-// 🤖 AI 서버가 제공할 기능(메서드) 정의
+// AI 서버가 제공할 기능(메서드) 정의
 service AiService {
-  // 1. 꼬리 질문 생성 요청 -> 응답
+  // 꼬리 질문 생성 요청 -> 응답
   rpc GenerateQuestion (QuestionRequest) returns (QuestionResponse);
 
-  // 2. 실시간 감정 분석 요청 -> 응답
+  // 실시간 감정 분석 요청 -> 응답
   rpc AnalyzeEmotion (EmotionRequest) returns (EmotionResponse);
+
+  // 초기 질문 생성 요청 -> 응답
+  rpc GenerateInitialQuestions (InitialQuestionRequest) returns (InitialQuestionResponse);
+
+  // 면접 답변 팁(피드백) 생성 요청 -> 응답
+  rpc GenerateTip (TipRequest) returns (TipResponse);
 }
 
 // 📦 --- 데이터 구조(DTO) 정의 ---

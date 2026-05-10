@@ -10,7 +10,7 @@ import com.interviewmirror.domain.interview.service.InterviewService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/interviews")
+@RequestMapping("/api/v1/interviews")
 public class InterviewController {
 
     private final InterviewService interviewService; // 서비스 계층 주입

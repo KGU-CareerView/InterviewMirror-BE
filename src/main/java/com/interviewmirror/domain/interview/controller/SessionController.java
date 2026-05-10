@@ -19,7 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user/{userID}/sessions")
+@RequestMapping("/api/v1/user/{userID}/sessions")
 public class SessionController {
 
     private final SessionService sessionService;
@@ -28,7 +28,7 @@ public class SessionController {
     private final AiGrpcClient aiGrpcClient;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 1. 면접 세션 생성 및 초기화
+    // 면접 세션 생성 및 초기화
     @PostMapping
     public ResponseEntity<SessionCreateResponse> createSession(@PathVariable("userID") long userID) {
         // DB와 Redis에 세션을 생성하고 ID를 반환받는 서비스 로직 호출
@@ -43,7 +43,7 @@ public class SessionController {
         );
     }
 
-    // 2. 면접 세션 상태 변경 (START, PAUSE, RESUME, END)
+    // 면접 세션 상태 변경 (START, PAUSE, RESUME, END)
     @PatchMapping("/{sessionID}/status")
     public ResponseEntity<Map<String, String>> updateSessionStatus(
             @PathVariable("sessionID") Long sessionID, 
@@ -52,13 +52,13 @@ public class SessionController {
         // DTO를 사용하여 상태값을 안전하게 추출
         String newStatus = request.getStatus();
         
-        // 세션 상태 변경 로직 호출 (메서드명은 실제 구현에 맞게 수정)
+        // 세션 상태 변경 로직 호출
         sessionService.changeState(sessionID, newStatus);
         
         return ResponseEntity.ok(Map.of("Result", "SUCCESS"));
     }
 
-    // 3. 현재 면접 세션 상태 조회
+    // 현재 면접 세션 상태 조회
     @GetMapping("/{sessionID}")
     public ResponseEntity<SessionStateResponse> getSessionState(@PathVariable("sessionID") Long sessionID) {
         String state = redisSessionService.getSessionState(sessionID);
@@ -71,7 +71,7 @@ public class SessionController {
         );
     }
 
-    // 4. S3 업로드용 Presigned URL 발급
+    // S3 업로드용 Presigned URL 발급
     @PostMapping("/{sessionID}/presigned")
     public ResponseEntity<PresignedUrlResponse> getPresignedUrl(
             @PathVariable("sessionID") Long sessionID, 
@@ -90,7 +90,7 @@ public class SessionController {
     }
 
     
-    // 5. 생성된 미디어(영상, 이미지, 음성) URL DB 저장
+    // 생성된 미디어(영상, 이미지, 음성) URL DB 저장
     
     @PostMapping("/{sessionID}/save/{mediaType}")
     public ResponseEntity<Map<String, String>> saveMediaUrl(
@@ -107,7 +107,7 @@ public class SessionController {
     }
 
     
-    // 6. 사용자 답변 제출 및 다음 AI 질문 생성 요청
+    // 사용자 답변 제출 및 다음 AI 질문 생성 요청
     @PostMapping("/{sessionID}/answer")
     public ResponseEntity<Map<String, String>> submitAnswer(
             @PathVariable("sessionID") Long sessionID,
@@ -123,7 +123,7 @@ public class SessionController {
     }
 
     
-    // 7. 실시간 감정 데이터 분석 요청 (gRPC & WebSocket)
+    // 실시간 감정 데이터 분석 요청 (gRPC & WebSocket)
     @PostMapping("/{sessionID}/emotion")
     public ResponseEntity<EmotionDataResponse> analyzeEmotion(
             @PathVariable("sessionID") Long sessionID, 

@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LoginRequest {
 
-    @NotBlank(message = "Email cannot be blank")
-    @Email(message = "Email should be valid")
-    private String email;
+  @NotBlank(message = "Email cannot be blank")
+  @Email(message = "Email should be valid")
+  private String email;
 
-    @NotBlank(message = "Password cannot be blank")
-    private String password;
+  @NotBlank(message = "Password cannot be blank")
+  private String password;
 }

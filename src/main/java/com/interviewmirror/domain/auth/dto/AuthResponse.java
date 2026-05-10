@@ -7,15 +7,15 @@ import lombok.Getter;
 @Builder
 public class AuthResponse {
 
-    private String accessToken;
-    private String tokenType;
-    private UserInfo user;
+  private String accessToken;
+  private String tokenType;
+  private UserInfo user;
 
-    @Getter
-    @Builder
-    public static class UserInfo {
-        private Long id;
-        private String email;
-        private String name;
-    }
+  @Getter
+  @Builder
+  public static class UserInfo {
+    private Long id;
+    private String email;
+    private String name;
+  }
 }

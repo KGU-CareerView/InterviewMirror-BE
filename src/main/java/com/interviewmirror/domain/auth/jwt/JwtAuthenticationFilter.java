@@ -7,50 +7,53 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
+  private final JwtTokenProvider jwtTokenProvider;
+  private final UserRepository userRepository;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+      throws ServletException, IOException {
 
-        String token = resolveToken(request);
+    String token = resolveToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
-            Long userId = jwtTokenProvider.getUserId(token);
+    if (token != null && jwtTokenProvider.validateToken(token)) {
+      Long userId = jwtTokenProvider.getUserId(token);
 
-            User user = userRepository.findById(userId).orElse(null);
+      User user = userRepository.findById(userId).orElse(null);
 
-            if (user != null) {
-                CustomUserDetails userDetails = new CustomUserDetails(user);
+      if (user != null) {
+        CustomUserDetails userDetails = new CustomUserDetails(user);
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        UsernamePasswordAuthenticationToken authentication =
+            new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        }
-
-        filterChain.doFilter(request, response);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+      }
     }
 
-    private String resolveToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
+    filterChain.doFilter(request, response);
+  }
 
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            return null;
-        }
+  private String resolveToken(HttpServletRequest request) {
+    String authorizationHeader = request.getHeader("Authorization");
 
-        return authorizationHeader.substring(7);
+    if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+      return null;
     }
+
+    return authorizationHeader.substring(7);
+  }
 }

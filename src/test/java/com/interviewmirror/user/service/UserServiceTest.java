@@ -4,12 +4,12 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.interviewmirror.exception.BusinessException;
 import com.interviewmirror.user.dto.UserCreateRequest;
 import com.interviewmirror.user.dto.UserResponse;
 import com.interviewmirror.user.dto.UserUpdateRequest;
 import com.interviewmirror.user.entity.User;
 import com.interviewmirror.user.repository.UserRepository;
-import com.interviewmirror.exception.BusinessException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-@DisplayName("UserServiceImpl Tests")
+@DisplayName("UserService Tests")
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -32,7 +32,7 @@ class UserServiceTest {
 
   @Mock private BCryptPasswordEncoder passwordEncoder;
 
-  @InjectMocks private UserServiceImpl userService;
+  @InjectMocks private UserService userService;
 
   private User testUser;
   private UserCreateRequest createRequest;

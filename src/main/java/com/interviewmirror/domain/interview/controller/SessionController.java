@@ -99,31 +99,38 @@ public class SessionController {
   public ResponseEntity<Map<String, String>> submitAnswer(
       @PathVariable("sessionID") Long sessionID, @RequestBody AnswerSubmitRequest request) {
 
-    // 프론트엔드에서는 답변만 받아옵니다.
-    String answer = request.getAnswer();
+        // 프론트엔드에서는 답변만 받아옵니다.
+        String answer = request.getAnswer();
 
-    // 파라미터를 2개(sessionID, answer)만 넘기도록 원상복구 합니다.
-    sessionService.processAnswerAndGenerateQuestion(sessionID, answer);
+        // 파라미터를 2개(sessionID, answer)만 넘기도록 원상복구 합니다.
+        sessionService.processAnswerAndGenerateQuestion(sessionID, answer);
 
-    return ResponseEntity.accepted().body(Map.of("Result", "ok"));
-  }
+        return ResponseEntity.accepted().body(Map.of("Result", "ok"));
+    }
 
-  // 실시간 감정 데이터 분석 요청 (gRPC & WebSocket)
-  @PostMapping("/{sessionID}/emotion")
-  public ResponseEntity<EmotionDataResponse> analyzeEmotion(
-      @PathVariable("sessionID") Long sessionID, @RequestBody EmotionDataRequest request) {
+    
+    // 실시간 감정 데이터 분석 요청 (gRPC & WebSocket)
+    @PostMapping("/{sessionID}/emotion")
+    public ResponseEntity<EmotionDataResponse> analyzeEmotion(
+            @PathVariable("sessionID") Long sessionID, 
+            @RequestBody EmotionDataRequest request) {
+        
+        String facialData = request.getData();
 
-    String facialData = request.getData();
+        // gRPC 통신으로 AI 분석 요청
+        String emotionResult = aiGrpcClient.analyzeEmotion(sessionID, facialData);
 
-    // gRPC 통신으로 AI 분석 요청
-    String emotionResult = aiGrpcClient.analyzeEmotion(sessionID, facialData);
+        // WebSocket으로 실시간 결과 브로드캐스팅
+        messagingTemplate.convertAndSend("/topic/session/" + sessionID + "/emotion", Map.of(
+                "type", "EMOTION_UPDATE",
+                "emotion", emotionResult
+        ));
 
-    // WebSocket으로 실시간 결과 브로드캐스팅
-    messagingTemplate.convertAndSend(
-        "/topic/session/" + sessionID + "/emotion",
-        Map.of("type", "EMOTION_UPDATE", "emotion", emotionResult));
-
-    return ResponseEntity.ok(
-        EmotionDataResponse.builder().message("전달완료").result(emotionResult).build());
-  }
+        return ResponseEntity.ok(
+                EmotionDataResponse.builder()
+                        .message("전달완료")
+                        .result(emotionResult)
+                        .build()
+        );
+    }
 }

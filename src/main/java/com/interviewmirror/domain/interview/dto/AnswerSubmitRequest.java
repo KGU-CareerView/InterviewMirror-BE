@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnswerSubmitRequest {
-  private String answer; // 사용자의 답변 텍스트
+    private String answer; // 사용자의 답변 텍스트
 }

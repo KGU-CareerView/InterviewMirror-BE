@@ -8,6 +8,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.interviewmirror.exception.ErrorResponse;
 
 @Slf4j
 @RestControllerAdvice
@@ -54,11 +55,11 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
   }
 
-    @ExceptionHandler(InterviewException.class)
-    public ResponseEntity<?> handleCustomException(InterviewException e) {
-        return ResponseEntity.status(e.getErrorCode().getStatus())
-                .body(new ErrorResponse(e.getErrorCode().getCode(), e.getErrorCode().getMessage()));
-    }
+  @ExceptionHandler(InterviewException.class)
+  public ResponseEntity<?> handleCustomException(InterviewException e) {
+    return ResponseEntity.status(e.getErrorCode().getStatus())
+        .body(new ErrorResponse(e.getErrorCode().getCode(), e.getErrorCode().getMessage()));
+  }
 
-    public record ErrorResponse(String code, String message) {}
+  public record ErrorResponse(String code, String message) {}
 }

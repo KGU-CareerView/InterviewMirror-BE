@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmotionDataResponse {
-    private String message; // 처리 메시지
-    private String result;  // 분석 결과
+  private String message; // 처리 메시지
+  private String result; // 분석 결과
 }

@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PresignedUrlResponse {
-  private String presignedUrl;
+    private String presignedUrl; 
 }

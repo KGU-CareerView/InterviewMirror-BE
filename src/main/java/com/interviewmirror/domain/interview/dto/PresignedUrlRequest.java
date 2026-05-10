@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PresignedUrlRequest {
-  private String fileType;
-  private Long fileSize;
-  private String contentType;
+    private String fileType;
+    private Long fileSize;
+    private String contentType;
 }

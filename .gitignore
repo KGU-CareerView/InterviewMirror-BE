@@ -2,16 +2,33 @@
 .idea/
 *.iml
 .vscode/
+.classpath
+.project
+.settings/
+.factorypath
+.metadata/
+.sts4-cache/
 *.swp
 *.swo
 
 # Build tools
 build/
+bin/
 dist/
+out/
+target/
+*.class
 *.jar
 *.war
 *.nar
 *.ear
+*.zip
+*.tar
+*.tar.gz
+
+# Java runtime dumps
+hs_err_pid*
+replay_pid*
 
 # Gradle
 .gradle/
@@ -31,7 +48,8 @@ Thumbs.db
 *.log
 logs/
 
-# Claude
+# AI
 CLAUDE.md
 docs/superpowers
-
+.agents/
+.codex/

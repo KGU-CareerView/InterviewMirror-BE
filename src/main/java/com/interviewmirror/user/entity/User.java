@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.user.entity;
+package com.interviewmirror.user.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

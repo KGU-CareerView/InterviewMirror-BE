@@ -1,14 +1,14 @@
-package com.interviewmirror.domain.user.service;
+package com.interviewmirror.user.service;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import com.interviewmirror.domain.user.dto.UserCreateRequest;
-import com.interviewmirror.domain.user.dto.UserResponse;
-import com.interviewmirror.domain.user.dto.UserUpdateRequest;
-import com.interviewmirror.domain.user.entity.User;
-import com.interviewmirror.domain.user.repository.UserRepository;
+import com.interviewmirror.user.dto.UserCreateRequest;
+import com.interviewmirror.user.dto.UserResponse;
+import com.interviewmirror.user.dto.UserUpdateRequest;
+import com.interviewmirror.user.entity.User;
+import com.interviewmirror.user.repository.UserRepository;
 import com.interviewmirror.exception.BusinessException;
 import java.time.LocalDateTime;
 import java.util.Arrays;

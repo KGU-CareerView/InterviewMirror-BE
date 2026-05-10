@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.user.dto;
+package com.interviewmirror.user.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

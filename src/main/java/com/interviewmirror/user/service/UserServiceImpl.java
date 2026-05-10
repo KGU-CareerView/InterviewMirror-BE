@@ -1,10 +1,10 @@
-package com.interviewmirror.domain.user.service;
+package com.interviewmirror.user.service;
 
-import com.interviewmirror.domain.user.dto.UserCreateRequest;
-import com.interviewmirror.domain.user.dto.UserResponse;
-import com.interviewmirror.domain.user.dto.UserUpdateRequest;
-import com.interviewmirror.domain.user.entity.User;
-import com.interviewmirror.domain.user.repository.UserRepository;
+import com.interviewmirror.user.dto.UserCreateRequest;
+import com.interviewmirror.user.dto.UserResponse;
+import com.interviewmirror.user.dto.UserUpdateRequest;
+import com.interviewmirror.user.entity.User;
+import com.interviewmirror.user.repository.UserRepository;
 import com.interviewmirror.exception.BusinessException;
 import java.util.List;
 import java.util.stream.Collectors;

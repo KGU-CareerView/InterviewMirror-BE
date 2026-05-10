@@ -1,9 +1,9 @@
-package com.interviewmirror.domain.user.controller;
+package com.interviewmirror.user.controller;
 
-import com.interviewmirror.domain.user.dto.UserCreateRequest;
-import com.interviewmirror.domain.user.dto.UserResponse;
-import com.interviewmirror.domain.user.dto.UserUpdateRequest;
-import com.interviewmirror.domain.user.service.UserService;
+import com.interviewmirror.user.dto.UserCreateRequest;
+import com.interviewmirror.user.dto.UserResponse;
+import com.interviewmirror.user.dto.UserUpdateRequest;
+import com.interviewmirror.user.service.UserService;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

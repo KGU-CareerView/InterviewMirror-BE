@@ -1,8 +1,8 @@
-package com.interviewmirror.domain.user.service;
+package com.interviewmirror.user.service;
 
-import com.interviewmirror.domain.user.dto.UserCreateRequest;
-import com.interviewmirror.domain.user.dto.UserResponse;
-import com.interviewmirror.domain.user.dto.UserUpdateRequest;
+import com.interviewmirror.user.dto.UserCreateRequest;
+import com.interviewmirror.user.dto.UserResponse;
+import com.interviewmirror.user.dto.UserUpdateRequest;
 import java.util.List;
 
 public interface UserService {

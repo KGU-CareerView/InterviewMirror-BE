@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SessionStatusUpdateRequest {
-    private String status; // START, PAUSE, RESUME, END
+  private String status; // START, PAUSE, RESUME, END
 }

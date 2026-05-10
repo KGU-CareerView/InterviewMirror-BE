@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AnswerTipResponse {
-    private String tip; // AI가 생성한 답변 요령 / 팁
+  private String tip; // AI가 생성한 답변 요령 / 팁
 }

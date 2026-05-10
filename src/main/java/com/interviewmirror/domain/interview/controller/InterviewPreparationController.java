@@ -6,8 +6,8 @@ import com.interviewmirror.domain.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.domain.interview.dto.InterviewSettingResponse;
 import com.interviewmirror.domain.interview.entity.InterviewSetting;
 import com.interviewmirror.domain.interview.service.InterviewPreparationService;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,34 +17,35 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/preparation")
 public class InterviewPreparationController {
 
-    private final InterviewPreparationService preparationService;
+  private final InterviewPreparationService preparationService;
 
-    @PostMapping("/settings")
-    public ResponseEntity<InterviewSettingResponse> saveInterviewSetting(
-            @Valid @RequestBody InterviewSettingRequest request) {
+  @PostMapping("/settings")
+  public ResponseEntity<InterviewSettingResponse> saveInterviewSetting(
+      @Valid @RequestBody InterviewSettingRequest request) {
 
-        Long settingId = preparationService.saveSetting(request);
+    Long settingId = preparationService.saveSetting(request);
 
-        InterviewSettingResponse response = InterviewSettingResponse.builder()
-                .settingId(settingId)
-                .message("면접 설정이 성공적으로 저장되었습니다.")
-                .build();
+    InterviewSettingResponse response =
+        InterviewSettingResponse.builder()
+            .settingId(settingId)
+            .message("면접 설정이 성공적으로 저장되었습니다.")
+            .build();
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
 
-    @GetMapping("/settings/user/{userId}")
-    public ResponseEntity<InterviewSetting> getLatestSetting(@PathVariable Long userId) {
-        InterviewSetting setting = preparationService.getLatestSetting(userId);
-        return ResponseEntity.ok(setting);
-    }
+  @GetMapping("/settings/user/{userId}")
+  public ResponseEntity<InterviewSetting> getLatestSetting(@PathVariable Long userId) {
+    InterviewSetting setting = preparationService.getLatestSetting(userId);
+    return ResponseEntity.ok(setting);
+  }
 
-    @PostMapping("/tips")
-    public ResponseEntity<AnswerTipResponse> generateAnswerTip(
-            @RequestBody AnswerTipRequest request) {
+  @PostMapping("/tips")
+  public ResponseEntity<AnswerTipResponse> generateAnswerTip(
+      @RequestBody AnswerTipRequest request) {
 
-        AnswerTipResponse response = preparationService.generateAnswerTip(request);
+    AnswerTipResponse response = preparationService.generateAnswerTip(request);
 
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+  }
 }

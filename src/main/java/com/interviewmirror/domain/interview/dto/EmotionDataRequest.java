@@ -8,5 +8,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmotionDataRequest {
-    private String data; // 안면 특징점 데이터 (필요시 JsonNode 또는 별도 객체로 변경)
+  private String data; // 안면 특징점 데이터 (필요시 JsonNode 또는 별도 객체로 변경)
 }

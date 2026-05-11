@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.user.dto.UserCreateRequest;
 import com.interviewmirror.user.dto.UserResponse;
 import com.interviewmirror.user.dto.UserUpdateRequest;
@@ -102,7 +103,9 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.createUser(createRequest))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Email already exists");
+        .hasMessage("Email already exists")
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
 
     // Verify password encoder was NOT called
     verify(passwordEncoder, never()).encode(anyString());
@@ -141,7 +144,9 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.getUserById(999L))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found");
+        .hasMessage("User not found")
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
     // Verify repository was called
     verify(userRepository, times(1)).findById(999L);
@@ -177,7 +182,9 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.getUserByEmail(email))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found");
+        .hasMessage("User not found")
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
     // Verify repository was called
     verify(userRepository, times(1)).findByEmail(email);
@@ -289,7 +296,9 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.updateUser(userId, updateRequest))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found");
+        .hasMessage("User not found")
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
     // Verify repository was called for find, but not for save
     verify(userRepository, times(1)).findById(userId);
@@ -322,7 +331,9 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.deleteUser(userId))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found");
+        .hasMessage("User not found")
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
     // Verify repository was called for exists check, but not for delete
     verify(userRepository, times(1)).existsById(userId);

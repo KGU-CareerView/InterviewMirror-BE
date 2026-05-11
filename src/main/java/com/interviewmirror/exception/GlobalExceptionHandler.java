@@ -1,9 +1,10 @@
 package com.interviewmirror.exception;
 
-import java.time.LocalDateTime;
+import com.interviewmirror.common.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,22 +14,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
   @ExceptionHandler(BusinessException.class)
-  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+  public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
     log.error("Business exception: {}", e.getMessage());
 
-    ErrorResponse response =
-        ErrorResponse.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .message(e.getMessage())
-            .errorCode(e.getErrorCode())
-            .timestamp(LocalDateTime.now())
-            .build();
+    ErrorCode errorCode = e.getErrorCode();
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.fail(errorCode));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<ErrorResponse> handleValidationException(
+  public ResponseEntity<ApiResponse<Void>> handleValidationException(
       MethodArgumentNotValidException e) {
     log.error("Validation exception: {}", e.getMessage());
 
@@ -38,29 +33,24 @@ public class GlobalExceptionHandler {
             .findFirst()
             .orElse("Invalid input");
 
-    ErrorResponse response =
-        ErrorResponse.builder()
-            .status(HttpStatus.BAD_REQUEST.value())
-            .message(message)
-            .errorCode("VALIDATION_ERROR")
-            .timestamp(LocalDateTime.now())
-            .build();
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ApiResponse.fail(ErrorCode.VALIDATION_ERROR, message));
+  }
 
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMethodNotSupportedException(
+      HttpRequestMethodNotSupportedException e) {
+    log.warn("Method not supported: {}", e.getMessage());
+
+    return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+        .body(ApiResponse.fail(ErrorCode.METHOD_NOT_ALLOWED, e.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
+  public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception e) {
     log.error("Unexpected exception", e);
 
-    ErrorResponse response =
-        ErrorResponse.builder()
-            .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .message("An unexpected error occurred")
-            .errorCode("INTERNAL_SERVER_ERROR")
-            .timestamp(LocalDateTime.now())
-            .build();
-
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
   }
 }

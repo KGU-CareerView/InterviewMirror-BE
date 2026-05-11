@@ -7,6 +7,7 @@ import com.interviewmirror.auth.dto.SignupRequest;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.user.entity.User;
 import com.interviewmirror.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ public class AuthService {
   @Transactional
   public AuthResponse signup(SignupRequest request) {
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new BusinessException("Email already exists", "DUPLICATE_EMAIL");
+      throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
     }
 
     User user =
@@ -48,11 +49,11 @@ public class AuthService {
     User user =
         userRepository
             .findByEmail(request.getEmail())
-            .orElseThrow(() -> new BusinessException("Invalid email or password", "INVALID_LOGIN"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_LOGIN));
 
     if (user.getPasswordHash() == null
         || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-      throw new BusinessException("Invalid email or password", "INVALID_LOGIN");
+      throw new BusinessException(ErrorCode.INVALID_LOGIN);
     }
 
     return createAuthResponse(user);

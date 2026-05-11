@@ -1,6 +1,7 @@
 package com.interviewmirror.user.service;
 
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.user.dto.UserCreateRequest;
 import com.interviewmirror.user.dto.UserResponse;
 import com.interviewmirror.user.dto.UserUpdateRequest;
@@ -31,7 +32,7 @@ public class UserService {
       allEntries = true)
   public UserResponse createUser(UserCreateRequest request) {
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new BusinessException("Email already exists", "DUPLICATE_EMAIL");
+      throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
     }
 
     User user =
@@ -52,7 +53,7 @@ public class UserService {
     User user =
         userRepository
             .findById(id)
-            .orElseThrow(() -> new BusinessException("User not found", "USER_NOT_FOUND"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     return mapToResponse(user);
   }
 
@@ -61,7 +62,7 @@ public class UserService {
     User user =
         userRepository
             .findByEmail(email)
-            .orElseThrow(() -> new BusinessException("User not found", "USER_NOT_FOUND"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     return mapToResponse(user);
   }
 
@@ -78,7 +79,7 @@ public class UserService {
     User user =
         userRepository
             .findById(id)
-            .orElseThrow(() -> new BusinessException("User not found", "USER_NOT_FOUND"));
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     user.setName(request.getName());
     User updatedUser = userRepository.save(user);
@@ -93,7 +94,7 @@ public class UserService {
       allEntries = true)
   public void deleteUser(Long id) {
     if (!userRepository.existsById(id)) {
-      throw new BusinessException("User not found", "USER_NOT_FOUND");
+      throw new BusinessException(ErrorCode.USER_NOT_FOUND);
     }
     userRepository.deleteById(id);
     log.info("User deleted: {}", id);

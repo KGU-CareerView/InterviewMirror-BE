@@ -1,24 +1,18 @@
 package com.interviewmirror.exception;
 
+import lombok.Getter;
+
+@Getter
 public class BusinessException extends RuntimeException {
-  private final String errorCode;
+  private final ErrorCode errorCode;
 
-  public BusinessException(String message) {
-    super(message);
-    this.errorCode = "BUSINESS_ERROR";
-  }
-
-  public BusinessException(String message, String errorCode) {
-    super(message);
+  public BusinessException(ErrorCode errorCode) {
+    super(errorCode.getMessage());
     this.errorCode = errorCode;
   }
 
-  public BusinessException(String message, Throwable cause) {
-    super(message, cause);
-    this.errorCode = "BUSINESS_ERROR";
-  }
-
-  public String getErrorCode() {
-    return errorCode;
+  public BusinessException(ErrorCode errorCode, Throwable cause) {
+    super(errorCode.getMessage(), cause);
+    this.errorCode = errorCode;
   }
 }

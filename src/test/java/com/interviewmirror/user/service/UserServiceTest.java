@@ -103,7 +103,7 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.createUser(createRequest))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Email already exists")
+        .hasMessage(ErrorCode.DUPLICATE_EMAIL.getMessage())
         .extracting("errorCode")
         .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
 
@@ -144,7 +144,7 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.getUserById(999L))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found")
+        .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage())
         .extracting("errorCode")
         .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
@@ -182,7 +182,7 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.getUserByEmail(email))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found")
+        .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage())
         .extracting("errorCode")
         .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
@@ -296,7 +296,7 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.updateUser(userId, updateRequest))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found")
+        .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage())
         .extracting("errorCode")
         .isEqualTo(ErrorCode.USER_NOT_FOUND);
 
@@ -331,7 +331,7 @@ class UserServiceTest {
     // Act & Assert
     assertThatThrownBy(() -> userService.deleteUser(userId))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("User not found")
+        .hasMessage(ErrorCode.USER_NOT_FOUND.getMessage())
         .extracting("errorCode")
         .isEqualTo(ErrorCode.USER_NOT_FOUND);
 

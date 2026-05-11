@@ -35,8 +35,10 @@ public class SecurityConfig {
             authz ->
                 authz
                     .requestMatchers(
+                        "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/api-docs/**",
+                        "/v3/api-docs/**",
                         "/h2-console/**",
                         "/actuator/health",
                         "/error",

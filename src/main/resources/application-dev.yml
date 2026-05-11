@@ -34,3 +34,7 @@ logging:
     root: INFO
     com.interviewmirror: DEBUG
     org.hibernate.SQL: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key-123456789}
+  access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}

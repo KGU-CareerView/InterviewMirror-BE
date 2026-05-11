@@ -1,8 +1,8 @@
-package com.interviewmirror.domain.auth.jwt;
+package com.interviewmirror.auth.jwt;
 
-import com.interviewmirror.domain.auth.security.CustomUserDetails;
-import com.interviewmirror.domain.user.entity.User;
-import com.interviewmirror.domain.user.repository.UserRepository;
+import com.interviewmirror.auth.security.CustomUserDetails;
+import com.interviewmirror.user.entity.User;
+import com.interviewmirror.user.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

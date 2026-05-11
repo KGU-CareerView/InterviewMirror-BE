@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.auth.jwt;
+package com.interviewmirror.auth.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -6,9 +6,11 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import javax.crypto.SecretKey;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -44,6 +46,7 @@ public class JwtTokenProvider {
       parseClaims(token);
       return true;
     } catch (Exception e) {
+      log.warn("JWT validation failed: {}", e.getMessage());
       return false;
     }
   }

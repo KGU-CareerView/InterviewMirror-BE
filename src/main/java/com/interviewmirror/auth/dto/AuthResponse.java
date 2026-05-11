@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.auth.dto;
+package com.interviewmirror.auth.dto;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.auth.dto;
+package com.interviewmirror.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

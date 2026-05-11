@@ -1,6 +1,6 @@
-package com.interviewmirror.domain.auth.security;
+package com.interviewmirror.auth.security;
 
-import com.interviewmirror.domain.user.entity.User;
+import com.interviewmirror.user.entity.User;
 import java.util.Collection;
 import java.util.Collections;
 import lombok.Getter;

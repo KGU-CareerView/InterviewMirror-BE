@@ -1,6 +1,6 @@
 package com.interviewmirror.config;
 
-import com.interviewmirror.domain.auth.jwt.JwtAuthenticationFilter;
+import com.interviewmirror.auth.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,11 +42,6 @@ public class SecurityConfig {
                         "/error",
                         "/v1/auth/signup",
                         "/v1/auth/login")
-                    .permitAll()
-
-                    // 기존 user API가 이미 열려 있던 상태라 일단 유지.
-                    // 나중에 보안 적용 시 이 줄은 제거하거나 일부만 허용하면 됨.
-                    .requestMatchers("/v1/users/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

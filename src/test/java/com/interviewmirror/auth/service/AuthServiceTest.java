@@ -1,16 +1,16 @@
-package com.interviewmirror.domain.auth.service;
+package com.interviewmirror.auth.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.interviewmirror.domain.auth.dto.AuthResponse;
-import com.interviewmirror.domain.auth.dto.LoginRequest;
-import com.interviewmirror.domain.auth.dto.SignupRequest;
-import com.interviewmirror.domain.auth.jwt.JwtTokenProvider;
-import com.interviewmirror.domain.user.entity.User;
-import com.interviewmirror.domain.user.repository.UserRepository;
+import com.interviewmirror.auth.dto.AuthResponse;
+import com.interviewmirror.auth.dto.LoginRequest;
+import com.interviewmirror.auth.dto.SignupRequest;
+import com.interviewmirror.auth.jwt.JwtTokenProvider;
+import com.interviewmirror.user.entity.User;
+import com.interviewmirror.user.repository.UserRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

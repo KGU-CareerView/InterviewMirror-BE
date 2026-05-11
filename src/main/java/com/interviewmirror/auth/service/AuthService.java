@@ -1,14 +1,14 @@
-package com.interviewmirror.domain.auth.service;
+package com.interviewmirror.auth.service;
 
-import com.interviewmirror.domain.auth.dto.AuthResponse;
-import com.interviewmirror.domain.auth.dto.LoginRequest;
-import com.interviewmirror.domain.auth.dto.MeResponse;
-import com.interviewmirror.domain.auth.dto.SignupRequest;
-import com.interviewmirror.domain.auth.jwt.JwtTokenProvider;
-import com.interviewmirror.domain.auth.security.CustomUserDetails;
-import com.interviewmirror.domain.user.entity.User;
-import com.interviewmirror.domain.user.repository.UserRepository;
+import com.interviewmirror.auth.dto.AuthResponse;
+import com.interviewmirror.auth.dto.LoginRequest;
+import com.interviewmirror.auth.dto.MeResponse;
+import com.interviewmirror.auth.dto.SignupRequest;
+import com.interviewmirror.auth.jwt.JwtTokenProvider;
+import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.user.entity.User;
+import com.interviewmirror.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;

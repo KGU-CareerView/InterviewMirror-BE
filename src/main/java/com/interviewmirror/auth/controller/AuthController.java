@@ -1,11 +1,11 @@
-package com.interviewmirror.domain.auth.controller;
+package com.interviewmirror.auth.controller;
 
-import com.interviewmirror.domain.auth.dto.AuthResponse;
-import com.interviewmirror.domain.auth.dto.LoginRequest;
-import com.interviewmirror.domain.auth.dto.MeResponse;
-import com.interviewmirror.domain.auth.dto.SignupRequest;
-import com.interviewmirror.domain.auth.security.CustomUserDetails;
-import com.interviewmirror.domain.auth.service.AuthService;
+import com.interviewmirror.auth.dto.AuthResponse;
+import com.interviewmirror.auth.dto.LoginRequest;
+import com.interviewmirror.auth.dto.MeResponse;
+import com.interviewmirror.auth.dto.SignupRequest;
+import com.interviewmirror.auth.security.CustomUserDetails;
+import com.interviewmirror.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

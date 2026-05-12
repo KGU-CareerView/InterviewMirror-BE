@@ -46,19 +46,11 @@ public class GlobalExceptionHandler {
         .body(ApiResponse.fail(ErrorCode.METHOD_NOT_ALLOWED, e.getMessage()));
   }
 
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception e) {
-    log.error("Unexpected exception", e);
+  @ExceptionHandler(InterviewException.class)
+  public ResponseEntity<ApiResponse<Void>> handleCustomException(InterviewException e) {
+    log.error("Interview exception: {}", e.getErrorCode().getMessage());
 
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
+    return ResponseEntity.status(e.getErrorCode().getStatus())
+        .body(ApiResponse.fail(e.getErrorCode()));
   }
-
-    @ExceptionHandler(InterviewException.class)
-    public ResponseEntity<?> handleCustomException(InterviewException e) {
-        return ResponseEntity.status(e.getErrorCode().getStatus())
-                .body(new ErrorResponse(e.getErrorCode().getCode(), e.getErrorCode().getMessage()));
-    }
-
-    public record ErrorResponse(String code, String message) {}
 }

@@ -39,6 +39,7 @@ InterviewMirror는 면접 준비를 돕는 애플리케이션입니다. 이 저�
 | **Spring Boot** | 3.5.8 | 프레임워크 |
 | **Spring Data JPA** | - | ORM |
 | **Spring Security** | - | 인증/인가 |
+| **Spring AOP** | - | 공통 요청/응답 로깅 |
 | **MySQL** | 8.4+ | 주 데이터베이스 |
 | **Redis** | 8.0+ | 캐싱 |
 | **Lombok** | - | 보일러플레이트 제거 |
@@ -60,9 +61,15 @@ src/
 │   │   │   ├── DatabaseConfig.java
 │   │   │   ├── CacheConfig.java
 │   │   │   └── SecurityConfig.java
+│   │   ├── common/                              # 공통 응답/로깅
+│   │   │   ├── ApiResponse.java
+│   │   │   ├── aspect/
+│   │   │   │   └── LoggingAspect.java
+│   │   │   └── dto/
+│   │   │       └── MessageResponse.java
 │   │   ├── exception/                           # 전역 예외 처리
 │   │   │   ├── BusinessException.java
-│   │   │   ├── ErrorResponse.java
+│   │   │   ├── ErrorCode.java
 │   │   │   ├── GlobalExceptionHandler.java
 │   │   ├── {domain}/                            # domain별 분리 
 │   │   │   ├── controller/                          # REST 컨트롤러
@@ -76,8 +83,6 @@ src/
 │   │   │   ├── repository/
 │   │   │   ├── entity/
 │   │   │   └── dto/
-│   │   └── util/                                # 유틸리티
-│   │       └── ApiResponse.java
 │   └── resources/
 │       ├── application.yml                      # 기본 설정
 │       ├── application-dev.yml                  # 개발 환경 설정
@@ -122,6 +127,23 @@ gradlew.bat                                      # Gradle Wrapper (Windows)
 #### 4. **Entity & DTO**
 - **Entity**: 데이터베이스 테이블 매핑
 - **DTO**: 외부 API 통신용 데이터 구조
+
+---
+
+## 공통 백엔드 컨벤션
+
+공통 API 응답, 예외 처리, 요청/응답 로깅, SQL 로그 설정은 아래 규칙을 따른다. 상세 문서는 Notion에서 관리한다.
+
+- 일반 JSON 성공 응답은 `ApiResponse.success(...)`로 감싼다.
+- `201 Created`, `204 No Content`, 커스텀 헤더, 쿠키처럼 HTTP 응답을 직접 제어해야 하면 `ResponseEntity`를 사용한다.
+- `ApiResponse` body에는 HTTP `status`를 넣지 않는다. HTTP status는 응답 자체가 책임진다.
+- 메시지만 내려주는 성공 응답은 문자열 대신 `MessageResponse`를 사용한다.
+- 서비스 계층의 비즈니스 예외는 `BusinessException(ErrorCode)`로 던진다.
+- 실패 응답은 `GlobalExceptionHandler`에서 `ApiResponse.fail(...)`로 변환한다.
+- 새 에러 상황은 `ErrorCode`에 HTTP status, code, message를 함께 추가한다.
+- 컨트롤러 요청/응답 로그는 `LoggingAspect`에서 공통 처리한다.
+- request body와 response body 전체는 로그에 남기지 않는다.
+- SQL 중복 출력을 막기 위해 `spring.jpa.show-sql`은 `false`로 두고, SQL은 `org.hibernate.SQL` logger로 확인한다.
 
 ---
 

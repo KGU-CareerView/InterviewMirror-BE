@@ -5,7 +5,7 @@ server:
 
 spring:
   profiles:
-    activate: dev
+    default: dev
 
   application:
     name: interview-mirror-backend

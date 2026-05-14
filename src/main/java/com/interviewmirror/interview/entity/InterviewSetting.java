@@ -14,9 +14,12 @@ public class InterviewSetting {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
   private Long settingId;
 
-  private Long userId; // 사용자와의 연관관계 (필요 시 @ManyToOne으로 변경 가능)
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "session_id")
+  private InterviewResult interviewResult;
 
   @Column(length = 50)
   private String category; // 분야

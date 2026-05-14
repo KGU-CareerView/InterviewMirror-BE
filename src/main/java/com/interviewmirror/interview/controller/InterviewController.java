@@ -1,34 +1,57 @@
 package com.interviewmirror.interview.controller;
 
+import com.interviewmirror.auth.security.CustomUserDetails;
+import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.interview.dto.InterviewHistoryResponse;
+import com.interviewmirror.interview.dto.InterviewReportResponse;
 import com.interviewmirror.interview.dto.InterviewResultResponse;
 import com.interviewmirror.interview.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/interviews")
+@RequestMapping("/v1/interviews")
 public class InterviewController {
 
-  private final InterviewService interviewService; // 서비스 계층 주입
+  private final InterviewService interviewService;
 
-  // 8. 결과 조회
-  @GetMapping("/{sessionID}/result")
-  public ResponseEntity<InterviewResultResponse> getResult(
-      @PathVariable("sessionID") Long sessionID) {
-    String resultData = interviewService.getInterviewResult(sessionID);
+  @GetMapping("/{sessionId}/result")
+  public ResponseEntity<ApiResponse<InterviewResultResponse>> getResult(
+      @PathVariable("sessionId") Long sessionId,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-    return ResponseEntity.ok(InterviewResultResponse.builder().result(resultData).build());
+    Long userId = userDetails.getId();
+
+    InterviewResultResponse response = interviewService.getInterviewResult(sessionId, userId);
+
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  // 9. 사용자 과거 기록 조회
   @GetMapping("/history")
-  public ResponseEntity<InterviewHistoryResponse> getHistory(
-      @RequestAttribute("userId") Long userId) {
-    // DB에서 조회해온 세션 ID 리스트를 DTO에 담아 반환
+  public ResponseEntity<ApiResponse<InterviewHistoryResponse>> getHistory(
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+    Long userId = userDetails.getId();
+
     return ResponseEntity.ok(
-        InterviewHistoryResponse.builder().sessionIds(interviewService.getHistory(userId)).build());
+        ApiResponse.success(
+            InterviewHistoryResponse.builder()
+                .sessionIds(interviewService.getHistory(userId))
+                .build()));
+  }
+
+  @GetMapping("/{sessionId}/report")
+  public ResponseEntity<ApiResponse<InterviewReportResponse>> getInterviewReport(
+      @PathVariable("sessionId") Long sessionId,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+    // 서비스에서 리포트 데이터 가져오기
+    InterviewReportResponse response =
+        interviewService.getInterviewReport(sessionId, userDetails.getId());
+
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

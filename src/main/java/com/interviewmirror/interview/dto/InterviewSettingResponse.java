@@ -12,5 +12,4 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class InterviewSettingResponse {
   private Long settingId;
-  private String message;
 }

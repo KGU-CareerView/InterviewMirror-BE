@@ -1,51 +1,57 @@
 package com.interviewmirror.interview.controller;
 
+import com.interviewmirror.auth.security.CustomUserDetails;
+import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.interview.dto.AnswerTipRequest;
 import com.interviewmirror.interview.dto.AnswerTipResponse;
+import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.dto.InterviewSettingResponse;
-import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.service.InterviewPreparationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/preparation")
+@RequestMapping("/v1/preparation")
 public class InterviewPreparationController {
 
   private final InterviewPreparationService preparationService;
 
-  @PostMapping("/settings")
-  public ResponseEntity<InterviewSettingResponse> saveInterviewSetting(
+  @PostMapping("/settings/save/{sessionId}")
+  public ResponseEntity<ApiResponse<InterviewSettingResponse>> saveInterviewSetting(
+      @PathVariable("sessionId") Long sessionId,
+      @AuthenticationPrincipal CustomUserDetails userDetails,
       @Valid @RequestBody InterviewSettingRequest request) {
 
-    Long settingId = preparationService.saveSetting(request);
+    Long userId = userDetails.getId();
+    Long settingId = preparationService.saveSetting(sessionId, userId, request);
 
-    InterviewSettingResponse response =
-        InterviewSettingResponse.builder()
-            .settingId(settingId)
-            .message("면접 설정이 성공적으로 저장되었습니다.")
-            .build();
-
-    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.success(InterviewSettingResponse.builder().settingId(settingId).build()));
   }
 
-  @GetMapping("/settings/user/{userId}")
-  public ResponseEntity<InterviewSetting> getLatestSetting(@PathVariable Long userId) {
-    InterviewSetting setting = preparationService.getLatestSetting(userId);
-    return ResponseEntity.ok(setting);
+  @GetMapping("/settings/{sessionId}")
+  public ResponseEntity<ApiResponse<InterviewSettingDetailResponse>> getSettingBySessionId(
+      @PathVariable("sessionId") Long sessionId,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+    Long userId = userDetails.getId();
+    InterviewSettingDetailResponse response =
+        preparationService.getSettingBySessionId(sessionId, userId);
+
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 
   @PostMapping("/tips")
-  public ResponseEntity<AnswerTipResponse> generateAnswerTip(
+  public ResponseEntity<ApiResponse<AnswerTipResponse>> generateAnswerTip(
       @RequestBody AnswerTipRequest request) {
 
     AnswerTipResponse response = preparationService.generateAnswerTip(request);
-
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 }

@@ -6,14 +6,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class InterviewSettingRequest {
-  @NotNull(message = "사용자 ID는 필수입니다.")
-  private Long userId;
-
   @NotBlank(message = "분야(Category)를 선택해주세요.")
   private String category;
 

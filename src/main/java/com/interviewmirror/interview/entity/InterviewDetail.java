@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "interview_Details")
+@Table(name = "interview_details")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,17 +13,23 @@ import lombok.*;
 public class InterviewDetail {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long numbering;
+  private Long id;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "sessionID")
+  @JoinColumn(name = "session_id")
   private InterviewResult interviewResult;
 
   private Long qId;
 
-  @Column(columnDefinition = "TEXT")
+  @Column(name = "question_text", columnDefinition = "TEXT")
   private String question;
 
-  @Column(columnDefinition = "TEXT")
+  @Column(name = "answer_text", columnDefinition = "TEXT")
   private String answer;
+
+  @Lob
+  @Column(columnDefinition = "TEXT")
+  private String emotionResult;
+
+  private Integer responseTimeSeconds;
 }

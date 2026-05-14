@@ -6,8 +6,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.interviewmirror.config.AiGrpcClient;
-import com.interviewmirror.config.RabbitMQProducer;
+import com.interviewmirror.infrastructure.AiGrpcClient;
+import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
@@ -93,8 +93,10 @@ class SessionServiceTest {
   void changeStateEndTest() {
     // given
     Long sessionId = 1L;
+    Long userId = 1L;
+
     InterviewResult mockResult =
-        InterviewResult.builder().sessionId(sessionId).sessionState("pause").build();
+        InterviewResult.builder().sessionId(sessionId).userId(userId).sessionState("pause").build();
 
     given(resultRepository.findById(sessionId)).willReturn(Optional.of(mockResult));
 
@@ -102,11 +104,8 @@ class SessionServiceTest {
     given(redisSessionService.getQaList(sessionId)).willReturn(List.of(validJson));
 
     // when
-    sessionService.changeState(sessionId, "end");
+    sessionService.changeState(sessionId, userId, "end");
 
-    // =========================================================================
-    // 🚨 [핵심 해결책] 등록된 afterCommit 콜백을 강제로 수동 실행시킵니다.
-    // =========================================================================
     List<TransactionSynchronization> synchronizations =
         TransactionSynchronizationManager.getSynchronizations();
     for (TransactionSynchronization synchronization : synchronizations) {
@@ -132,7 +131,11 @@ class SessionServiceTest {
     given(aiGrpcClient.generateNextQuestion(sessionId, answer)).willReturn("다음 질문입니다.");
 
     // when
-    sessionService.processAnswerAndGenerateQuestion(sessionId, answer);
+    String emotionResult = "HAPPY";
+    Integer responseTimeSeconds = 15;
+
+    sessionService.processAnswerAndGenerateQuestion(
+        sessionId, answer, emotionResult, responseTimeSeconds);
 
     // then
     verify(redisSessionService).addQaToRedis(eq(sessionId), anyString());

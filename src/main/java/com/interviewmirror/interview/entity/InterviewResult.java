@@ -7,7 +7,7 @@ import java.util.List;
 import lombok.*;
 
 @Entity
-@Table(name = "interview_Results")
+@Table(name = "interview_results")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,22 +16,26 @@ import lombok.*;
 public class InterviewResult {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "sessionID")
-  private Long sessionId; // 수동 할당 (Redis에서 발급한 ID 사용)
+  @Column(name = "session_id")
+  private Long sessionId;
 
+  @Builder.Default
   @OneToMany(mappedBy = "interviewResult", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<InterviewDetail> details = new ArrayList<>();
 
+  @Column(name = "user_id")
   private Long userId;
 
-  @Column(length = 20)
-  private String sessionState; // START, PAUSE, RESUME, END
+  @Column(name = "session_state", length = 20)
+  private String sessionState;
 
-  @Column(length = 255)
+  @Column(name = "video_url", length = 255)
   private String videoUrl;
 
+  @Column(name = "created_at")
   private LocalDateTime createTime;
 
-  @Lob // JSON 형태로 저장될 수 있음
+  @Lob
+  @Column(name = "emotion_graph_json", columnDefinition = "LONGTEXT")
   private String emotionGraph;
 }

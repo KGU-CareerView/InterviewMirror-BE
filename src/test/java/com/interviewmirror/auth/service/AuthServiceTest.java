@@ -30,10 +30,12 @@ class AuthServiceTest {
 
   @Mock private JwtTokenProvider jwtTokenProvider;
 
+  @Mock private RefreshTokenService refreshTokenService;
+
   @InjectMocks private AuthService authService;
 
   @Test
-  @DisplayName("회원가입 성공 시 access token과 사용자 정보를 반환한다")
+  @DisplayName("회원가입 성공 시 access token, refresh token과 사용자 정보를 반환한다")
   void signupSuccess() {
     SignupRequest request = new SignupRequest();
     ReflectionTestUtils.setField(request, "email", "test@example.com");
@@ -52,10 +54,12 @@ class AuthServiceTest {
     when(passwordEncoder.encode("password1234")).thenReturn("encodedPassword");
     when(userRepository.save(any(User.class))).thenReturn(savedUser);
     when(jwtTokenProvider.createAccessToken(1L, "test@example.com")).thenReturn("access-token");
+    when(jwtTokenProvider.createRefreshToken(1L, "test@example.com")).thenReturn("refresh-token");
 
     AuthResponse response = authService.signup(request);
 
     assertThat(response.getAccessToken()).isEqualTo("access-token");
+    assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
     assertThat(response.getTokenType()).isEqualTo("Bearer");
     assertThat(response.getUser().getId()).isEqualTo(1L);
     assertThat(response.getUser().getEmail()).isEqualTo("test@example.com");
@@ -65,10 +69,12 @@ class AuthServiceTest {
     verify(passwordEncoder).encode("password1234");
     verify(userRepository).save(any(User.class));
     verify(jwtTokenProvider).createAccessToken(1L, "test@example.com");
+    verify(jwtTokenProvider).createRefreshToken(1L, "test@example.com");
+    verify(refreshTokenService).saveRefreshToken(1L, "refresh-token");
   }
 
   @Test
-  @DisplayName("로그인 성공 시 access token과 사용자 정보를 반환한다")
+  @DisplayName("로그인 성공 시 access token, refresh token과 사용자 정보를 반환한다")
   void loginSuccess() {
     LoginRequest request = new LoginRequest();
     ReflectionTestUtils.setField(request, "email", "test@example.com");
@@ -85,10 +91,12 @@ class AuthServiceTest {
     when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
     when(passwordEncoder.matches("password1234", "encodedPassword")).thenReturn(true);
     when(jwtTokenProvider.createAccessToken(1L, "test@example.com")).thenReturn("access-token");
+    when(jwtTokenProvider.createRefreshToken(1L, "test@example.com")).thenReturn("refresh-token");
 
     AuthResponse response = authService.login(request);
 
     assertThat(response.getAccessToken()).isEqualTo("access-token");
+    assertThat(response.getRefreshToken()).isEqualTo("refresh-token");
     assertThat(response.getTokenType()).isEqualTo("Bearer");
     assertThat(response.getUser().getId()).isEqualTo(1L);
     assertThat(response.getUser().getEmail()).isEqualTo("test@example.com");
@@ -97,5 +105,7 @@ class AuthServiceTest {
     verify(userRepository).findByEmail("test@example.com");
     verify(passwordEncoder).matches("password1234", "encodedPassword");
     verify(jwtTokenProvider).createAccessToken(1L, "test@example.com");
+    verify(jwtTokenProvider).createRefreshToken(1L, "test@example.com");
+    verify(refreshTokenService).saveRefreshToken(1L, "refresh-token");
   }
 }

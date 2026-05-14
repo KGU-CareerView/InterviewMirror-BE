@@ -9,6 +9,10 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
   DUPLICATE_EMAIL(HttpStatus.CONFLICT, "DUPLICATE_EMAIL", "이미 존재하는 이메일입니다."),
   INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "INVALID_LOGIN", "잘못된 이메일 또는 비밀번호입니다."),
+  INVALID_REFRESH_TOKEN(
+      HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "유효하지 않은 refresh token입니다."),
+  REFRESH_TOKEN_NOT_FOUND(
+      HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_NOT_FOUND", "refresh token을 찾을 수 없습니다."),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
 
   VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "잘못된 입력입니다."),

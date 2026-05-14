@@ -1,9 +1,10 @@
-package com.interviewmirror.domain.feedback.controller;
+package com.interviewmirror.feedback.controller;
 
-import com.interviewmirror.domain.feedback.dto.FeedbackEndRequest;
-import com.interviewmirror.domain.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.domain.feedback.dto.FeedbackSummaryResponse;
-import com.interviewmirror.domain.feedback.service.FeedbackService;
+import com.interviewmirror.common.ApiResponse;
+import com.interviewmirror.feedback.dto.FeedbackEndRequest;
+import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
+import com.interviewmirror.feedback.dto.FeedbackSummaryResponse;
+import com.interviewmirror.feedback.service.FeedbackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -22,7 +23,8 @@ public class FeedbackWebSocketController {
   }
 
   @MessageMapping("/feedback.end")
-  public FeedbackSummaryResponse completeSession(@Valid @Payload FeedbackEndRequest request) {
-    return feedbackService.completeSession(request);
+  public ApiResponse<FeedbackSummaryResponse> completeSession(
+      @Valid @Payload FeedbackEndRequest request) {
+    return ApiResponse.success(feedbackService.completeSession(request));
   }
 }

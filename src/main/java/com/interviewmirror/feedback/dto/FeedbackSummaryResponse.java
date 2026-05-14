@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.feedback.dto;
+package com.interviewmirror.feedback.dto;
 
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;

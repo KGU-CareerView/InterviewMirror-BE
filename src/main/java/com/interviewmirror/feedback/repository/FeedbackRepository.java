@@ -1,6 +1,6 @@
-package com.interviewmirror.domain.feedback.repository;
+package com.interviewmirror.feedback.repository;
 
-import com.interviewmirror.domain.feedback.entity.FeedbackResult;
+import com.interviewmirror.feedback.entity.FeedbackResult;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

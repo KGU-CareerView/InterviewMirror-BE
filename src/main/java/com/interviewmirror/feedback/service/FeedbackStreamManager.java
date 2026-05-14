@@ -1,14 +1,14 @@
-package com.interviewmirror.domain.feedback.service;
+package com.interviewmirror.feedback.service;
 
-import com.interviewmirror.domain.feedback.client.EmotionAnalysisClient;
-import com.interviewmirror.domain.feedback.dto.FeedbackErrorResponse;
-import com.interviewmirror.domain.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
+import com.interviewmirror.common.ApiResponse;
+import com.interviewmirror.feedback.client.EmotionAnalysisClient;
+import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
 import io.grpc.stub.StreamObserver;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class FeedbackStreamManager {
       stream.onNext(featureRequest);
     } catch (RuntimeException e) {
       streams.remove(request.getSessionId());
-      throw new BusinessException("Failed to send feedback frame to AI server", e);
+      throw new BusinessException(ErrorCode.FEEDBACK_STREAM_SEND_FAILED, e);
     }
   }
 
@@ -54,7 +54,7 @@ public class FeedbackStreamManager {
           public void onNext(AnalysisResponse analysisResponse) {
             FeedbackResponse response = feedbackGrpcMapper.toFeedbackResponse(analysisResponse);
             messagingTemplate.convertAndSend(
-                "/topic/feedback/" + response.getSessionId(), response);
+                "/topic/feedback/" + response.getSessionId(), ApiResponse.success(response));
             feedbackFrameBuffer.add(response);
           }
 
@@ -64,12 +64,7 @@ public class FeedbackStreamManager {
             log.error("AI feedback stream failed for session {}", sessionId, throwable);
             messagingTemplate.convertAndSend(
                 "/topic/feedback/" + sessionId + "/errors",
-                FeedbackErrorResponse.builder()
-                    .sessionId(sessionId)
-                    .message("AI analysis stream failed")
-                    .errorCode("AI_STREAM_FAILED")
-                    .timestamp(LocalDateTime.now())
-                    .build());
+                ApiResponse.fail(ErrorCode.AI_STREAM_FAILED));
           }
 
           @Override

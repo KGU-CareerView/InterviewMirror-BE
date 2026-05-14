@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.feedback.dto;
+package com.interviewmirror.feedback.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

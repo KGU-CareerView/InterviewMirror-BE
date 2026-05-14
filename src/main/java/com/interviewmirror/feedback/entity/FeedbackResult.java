@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.feedback.entity;
+package com.interviewmirror.feedback.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

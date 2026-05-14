@@ -1,10 +1,10 @@
-package com.interviewmirror.domain.feedback.service;
+package com.interviewmirror.feedback.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.interviewmirror.domain.feedback.dto.BoundingBoxDto;
-import com.interviewmirror.domain.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
+import com.interviewmirror.feedback.dto.BoundingBoxDto;
+import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.BoundingBox;
 import com.interviewmirror.grpc.proto.FeatureRequest;

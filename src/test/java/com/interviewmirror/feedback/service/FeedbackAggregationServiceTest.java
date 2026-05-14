@@ -1,15 +1,15 @@
-package com.interviewmirror.domain.feedback.service;
+package com.interviewmirror.feedback.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
-import com.interviewmirror.domain.feedback.dto.FeedbackSummaryResponse;
-import com.interviewmirror.domain.feedback.entity.FeedbackResult;
-import com.interviewmirror.domain.feedback.repository.FeedbackBufferRepository;
-import com.interviewmirror.domain.feedback.repository.FeedbackRepository;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
+import com.interviewmirror.feedback.dto.FeedbackSummaryResponse;
+import com.interviewmirror.feedback.entity.FeedbackResult;
+import com.interviewmirror.feedback.repository.FeedbackBufferRepository;
+import com.interviewmirror.feedback.repository.FeedbackRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;

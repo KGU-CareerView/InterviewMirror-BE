@@ -1,9 +1,10 @@
-package com.interviewmirror.domain.feedback.repository;
+package com.interviewmirror.feedback.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,8 +60,7 @@ public class FeedbackBufferRepository {
     try {
       return objectMapper.writeValueAsString(response);
     } catch (JsonProcessingException e) {
-      throw new BusinessException(
-          "Failed to serialize feedback response", "FEEDBACK_SERIALIZE_FAILED");
+      throw new BusinessException(ErrorCode.FEEDBACK_SERIALIZE_FAILED, e);
     }
   }
 
@@ -68,8 +68,7 @@ public class FeedbackBufferRepository {
     try {
       return objectMapper.readValue(payload, FeedbackResponse.class);
     } catch (JsonProcessingException e) {
-      throw new BusinessException(
-          "Failed to deserialize feedback response", "FEEDBACK_DESERIALIZE_FAILED");
+      throw new BusinessException(ErrorCode.FEEDBACK_DESERIALIZE_FAILED, e);
     }
   }
 }

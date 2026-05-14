@@ -1,7 +1,7 @@
-package com.interviewmirror.domain.feedback.service;
+package com.interviewmirror.feedback.service;
 
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
-import com.interviewmirror.domain.feedback.repository.FeedbackBufferRepository;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
+import com.interviewmirror.feedback.repository.FeedbackBufferRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

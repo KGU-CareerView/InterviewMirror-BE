@@ -1,4 +1,4 @@
-package com.interviewmirror.domain.feedback.service;
+package com.interviewmirror.feedback.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,9 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.interviewmirror.domain.feedback.client.EmotionAnalysisClient;
-import com.interviewmirror.domain.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.domain.feedback.dto.FeedbackResponse;
+import com.interviewmirror.common.ApiResponse;
+import com.interviewmirror.feedback.client.EmotionAnalysisClient;
+import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
+import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
 import io.grpc.stub.StreamObserver;
@@ -97,7 +98,7 @@ class FeedbackStreamManagerTest {
                 .build());
 
     verify(messagingTemplate)
-        .convertAndSend(eq("/topic/feedback/session-1"), any(FeedbackResponse.class));
+        .convertAndSend(eq("/topic/feedback/session-1"), any(ApiResponse.class));
     verify(frameBuffer).add(any(FeedbackResponse.class));
   }
 }

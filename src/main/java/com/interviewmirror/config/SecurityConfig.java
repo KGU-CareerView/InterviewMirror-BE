@@ -43,7 +43,9 @@ public class SecurityConfig {
                         "/actuator/health",
                         "/error",
                         "/v1/auth/signup",
-                        "/v1/auth/login")
+                        "/v1/auth/login",
+                        "/v1/auth/reissue",
+                        "/v1/auth/logout")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

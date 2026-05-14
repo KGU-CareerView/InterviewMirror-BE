@@ -38,3 +38,4 @@ logging:
 jwt:
   secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key-123456789}
   access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}
+  refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000}

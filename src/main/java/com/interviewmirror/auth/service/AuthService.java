@@ -2,7 +2,9 @@ package com.interviewmirror.auth.service;
 
 import com.interviewmirror.auth.dto.AuthResponse;
 import com.interviewmirror.auth.dto.LoginRequest;
+import com.interviewmirror.auth.dto.LogoutRequest;
 import com.interviewmirror.auth.dto.MeResponse;
+import com.interviewmirror.auth.dto.ReissueRequest;
 import com.interviewmirror.auth.dto.SignupRequest;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
@@ -25,6 +27,7 @@ public class AuthService {
   private final UserRepository userRepository;
   private final BCryptPasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
+  private final RefreshTokenService refreshTokenService;
 
   @Transactional
   public AuthResponse signup(SignupRequest request) {
@@ -59,6 +62,40 @@ public class AuthService {
     return createAuthResponse(user);
   }
 
+  public AuthResponse reissue(ReissueRequest request) {
+    String refreshToken = request.getRefreshToken();
+
+    if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
+      throw new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN);
+    }
+
+    Long userId = jwtTokenProvider.getUserId(refreshToken);
+    refreshTokenService.validateStoredRefreshToken(userId, refreshToken);
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+    String newAccessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+
+    return AuthResponse.builder()
+        .accessToken(newAccessToken)
+        .refreshToken(refreshToken)
+        .tokenType("Bearer")
+        .user(
+            AuthResponse.UserInfo.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .build())
+        .build();
+  }
+
+  public void logout(LogoutRequest request) {
+    refreshTokenService.deleteRefreshToken(request.getRefreshToken());
+  }
+
   public MeResponse me(CustomUserDetails userDetails) {
     return MeResponse.builder()
         .id(userDetails.getId())
@@ -69,9 +106,13 @@ public class AuthService {
 
   private AuthResponse createAuthResponse(User user) {
     String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail());
+    String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getEmail());
+
+    refreshTokenService.saveRefreshToken(user.getId(), refreshToken);
 
     return AuthResponse.builder()
         .accessToken(accessToken)
+        .refreshToken(refreshToken)
         .tokenType("Bearer")
         .user(
             AuthResponse.UserInfo.builder()

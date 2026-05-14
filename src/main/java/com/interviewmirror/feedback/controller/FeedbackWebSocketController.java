@@ -1,9 +1,9 @@
 package com.interviewmirror.feedback.controller;
 
 import com.interviewmirror.common.ApiResponse;
+import com.interviewmirror.common.dto.MessageResponse;
 import com.interviewmirror.feedback.dto.FeedbackEndRequest;
 import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.feedback.dto.FeedbackSummaryResponse;
 import com.interviewmirror.feedback.service.FeedbackService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +23,7 @@ public class FeedbackWebSocketController {
   }
 
   @MessageMapping("/feedback.end")
-  public ApiResponse<FeedbackSummaryResponse> completeSession(
-      @Valid @Payload FeedbackEndRequest request) {
+  public ApiResponse<MessageResponse> completeSession(@Valid @Payload FeedbackEndRequest request) {
     return ApiResponse.success(feedbackService.completeSession(request));
   }
 }

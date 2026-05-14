@@ -16,9 +16,10 @@ public enum ErrorCode {
   FEEDBACK_COMPLETE_FAILED(
       HttpStatus.INTERNAL_SERVER_ERROR, "FEEDBACK_COMPLETE_FAILED", "피드백 세션 완료 처리에 실패했습니다."),
   FEEDBACK_STREAM_SEND_FAILED(
-      HttpStatus.INTERNAL_SERVER_ERROR, "FEEDBACK_STREAM_SEND_FAILED", "AI 서버로 피드백 프레임 전송에 실패했습니다."),
-  AI_STREAM_FAILED(
-      HttpStatus.INTERNAL_SERVER_ERROR, "AI_STREAM_FAILED", "AI 분석 스트림 처리에 실패했습니다."),
+      HttpStatus.INTERNAL_SERVER_ERROR,
+      "FEEDBACK_STREAM_SEND_FAILED",
+      "AI 서버로 피드백 프레임 전송에 실패했습니다."),
+  AI_STREAM_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI_STREAM_FAILED", "AI 분석 스트림 처리에 실패했습니다."),
   FEEDBACK_SERIALIZE_FAILED(
       HttpStatus.INTERNAL_SERVER_ERROR, "FEEDBACK_SERIALIZE_FAILED", "피드백 응답 직렬화에 실패했습니다."),
   FEEDBACK_DESERIALIZE_FAILED(

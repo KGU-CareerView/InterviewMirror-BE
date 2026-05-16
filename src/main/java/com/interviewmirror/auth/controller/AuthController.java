@@ -4,6 +4,7 @@ import com.interviewmirror.auth.dto.AuthResponse;
 import com.interviewmirror.auth.dto.LoginRequest;
 import com.interviewmirror.auth.dto.LogoutRequest;
 import com.interviewmirror.auth.dto.MeResponse;
+import com.interviewmirror.auth.dto.OAuthTokenRequest;
 import com.interviewmirror.auth.dto.ReissueRequest;
 import com.interviewmirror.auth.dto.SignupRequest;
 import com.interviewmirror.auth.security.CustomUserDetails;
@@ -38,6 +39,13 @@ public class AuthController {
   @PostMapping("/login")
   public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
     AuthResponse response = authService.login(request);
+    return ApiResponse.success(response);
+  }
+
+  @PostMapping("/oauth/token")
+  public ApiResponse<AuthResponse> exchangeOAuthCode(
+      @Valid @RequestBody OAuthTokenRequest request) {
+    AuthResponse response = authService.exchangeOAuthCode(request);
     return ApiResponse.success(response);
   }
 

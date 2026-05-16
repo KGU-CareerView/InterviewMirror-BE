@@ -36,6 +36,17 @@ spring:
       password: ${REDIS_PASSWORD:}
       timeout: 2000
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+
 logging:
   level:
     root: INFO
@@ -51,3 +62,7 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS}
   refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS}
+
+oauth:
+  success-redirect-url: ${OAUTH_SUCCESS_REDIRECT_URL}
+  code-expiration-ms: ${OAUTH_CODE_EXPIRATION_MS}

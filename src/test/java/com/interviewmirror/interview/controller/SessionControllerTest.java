@@ -17,7 +17,6 @@ import com.interviewmirror.auth.service.AuthService;
 import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
-import com.interviewmirror.interview.controller.SessionController;
 import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.interview.service.InterviewService;
 import com.interviewmirror.interview.service.RedisSessionService;

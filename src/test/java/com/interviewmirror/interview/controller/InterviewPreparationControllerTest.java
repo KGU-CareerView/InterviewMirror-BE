@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.interview.controller.InterviewPreparationController;
 import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.service.InterviewPreparationService;

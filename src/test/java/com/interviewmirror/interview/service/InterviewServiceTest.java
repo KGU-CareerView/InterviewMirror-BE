@@ -20,8 +20,6 @@ import com.interviewmirror.interview.entity.InterviewReport;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.repository.InterviewReportRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
-import com.interviewmirror.interview.service.InterviewService;
-import com.interviewmirror.interview.service.SessionService;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;

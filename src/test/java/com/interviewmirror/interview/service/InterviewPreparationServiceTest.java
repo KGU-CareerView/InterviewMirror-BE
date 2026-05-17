@@ -15,8 +15,6 @@ import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
-import com.interviewmirror.interview.service.InterviewPreparationService;
-import com.interviewmirror.interview.service.SessionService;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

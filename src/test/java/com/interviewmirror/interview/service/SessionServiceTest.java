@@ -12,8 +12,6 @@ import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
-import com.interviewmirror.interview.service.RedisSessionService;
-import com.interviewmirror.interview.service.SessionService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

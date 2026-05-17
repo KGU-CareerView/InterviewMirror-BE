@@ -13,6 +13,9 @@ public enum ErrorCode {
       HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "유효하지 않은 refresh token입니다."),
   REFRESH_TOKEN_NOT_FOUND(
       HttpStatus.UNAUTHORIZED, "REFRESH_TOKEN_NOT_FOUND", "refresh token을 찾을 수 없습니다."),
+  INVALID_OAUTH_CODE(HttpStatus.UNAUTHORIZED, "INVALID_OAUTH_CODE", "유효하지 않은 OAuth code입니다."),
+  OAUTH_EMAIL_NOT_FOUND(
+      HttpStatus.BAD_REQUEST, "OAUTH_EMAIL_NOT_FOUND", "OAuth 계정에서 이메일을 찾을 수 없습니다."),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
   VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "잘못된 입력입니다."),
   METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "허용되지 않은 메서드입니다."),

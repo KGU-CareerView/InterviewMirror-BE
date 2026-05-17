@@ -29,6 +29,17 @@ spring:
       host: ${REDIS_HOST:127.0.0.1}
       port: ${REDIS_PORT:6379}
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:local-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:local-google-client-secret}
+            scope:
+              - email
+              - profile
+
 logging:
   level:
     root: INFO
@@ -39,3 +50,7 @@ jwt:
   secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key-123456789}
   access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}
   refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000}
+
+oauth:
+  success-redirect-url: ${OAUTH_SUCCESS_REDIRECT_URL:http://localhost:63342/oauth-success.html}
+  code-expiration-ms: ${OAUTH_CODE_EXPIRATION_MS:180000}

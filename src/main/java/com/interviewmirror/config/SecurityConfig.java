@@ -1,13 +1,13 @@
 package com.interviewmirror.config;
 
 import com.interviewmirror.auth.jwt.JwtAuthenticationFilter;
+import com.interviewmirror.auth.oauth.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -17,11 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-  @Bean
-  public BCryptPasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
+  private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,13 +38,17 @@ public class SecurityConfig {
                         "/h2-console/**",
                         "/actuator/health",
                         "/error",
+                        "/oauth2/**",
+                        "/login/oauth2/**",
                         "/v1/auth/signup",
                         "/v1/auth/login",
                         "/v1/auth/reissue",
-                        "/v1/auth/logout")
+                        "/v1/auth/logout",
+                        "/v1/auth/oauth/token")
                     .permitAll()
                     .anyRequest()
                     .authenticated())
+        .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

@@ -4,6 +4,7 @@ import com.interviewmirror.auth.dto.AuthResponse;
 import com.interviewmirror.auth.dto.LoginRequest;
 import com.interviewmirror.auth.dto.LogoutRequest;
 import com.interviewmirror.auth.dto.MeResponse;
+import com.interviewmirror.auth.dto.OAuthTokenRequest;
 import com.interviewmirror.auth.dto.ReissueRequest;
 import com.interviewmirror.auth.dto.SignupRequest;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
@@ -28,6 +29,7 @@ public class AuthService {
   private final BCryptPasswordEncoder passwordEncoder;
   private final JwtTokenProvider jwtTokenProvider;
   private final RefreshTokenService refreshTokenService;
+  private final OAuthCodeService oauthCodeService;
 
   @Transactional
   public AuthResponse signup(SignupRequest request) {
@@ -58,6 +60,17 @@ public class AuthService {
         || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
       throw new BusinessException(ErrorCode.INVALID_LOGIN);
     }
+
+    return createAuthResponse(user);
+  }
+
+  public AuthResponse exchangeOAuthCode(OAuthTokenRequest request) {
+    Long userId = oauthCodeService.consumeCode(request.getCode());
+
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
     return createAuthResponse(user);
   }

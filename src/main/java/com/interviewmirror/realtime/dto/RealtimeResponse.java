@@ -1,4 +1,4 @@
-package com.interviewmirror.feedback.dto;
+package com.interviewmirror.realtime.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FeedbackResponse {
+public class RealtimeResponse {
 
   private String sessionId;
   private String userId;

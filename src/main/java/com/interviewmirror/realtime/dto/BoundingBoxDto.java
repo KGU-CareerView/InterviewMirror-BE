@@ -1,4 +1,4 @@
-package com.interviewmirror.feedback.dto;
+package com.interviewmirror.realtime.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

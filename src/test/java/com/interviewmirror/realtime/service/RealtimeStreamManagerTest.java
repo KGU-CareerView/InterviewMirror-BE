@@ -1,4 +1,4 @@
-package com.interviewmirror.feedback.service;
+package com.interviewmirror.realtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,11 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.interviewmirror.common.ApiResponse;
-import com.interviewmirror.feedback.client.EmotionAnalysisClient;
-import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
+import com.interviewmirror.realtime.client.EmotionAnalysisClient;
+import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,19 +21,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
-@DisplayName("FeedbackStreamManager Tests")
-class FeedbackStreamManagerTest {
+@DisplayName("RealtimeStreamManager Tests")
+class RealtimeStreamManagerTest {
 
-  private final FeedbackGrpcMapper mapper = new FeedbackGrpcMapper();
+  private final RealtimeGrpcMapper mapper = new RealtimeGrpcMapper();
   private final EmotionAnalysisClient client = mock(EmotionAnalysisClient.class);
-  private final FeedbackFrameBuffer frameBuffer = mock(FeedbackFrameBuffer.class);
+  private final RealtimeFrameBuffer frameBuffer = mock(RealtimeFrameBuffer.class);
   private final SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
   private final AtomicReference<StreamObserver<AnalysisResponse>> responseObserver =
       new AtomicReference<>();
   private final AtomicReference<FeatureRequest> requestSent = new AtomicReference<>();
 
-  private final FeedbackStreamManager streamManager =
-      new FeedbackStreamManager(client, mapper, frameBuffer, messagingTemplate);
+  private final RealtimeStreamManager streamManager =
+      new RealtimeStreamManager(client, mapper, frameBuffer, messagingTemplate);
 
   @BeforeEach
   void setUp() {
@@ -59,8 +59,8 @@ class FeedbackStreamManagerTest {
   @Test
   @DisplayName("should send frame to grpc stream")
   void sendFrame() {
-    FeedbackFrameRequest request =
-        FeedbackFrameRequest.builder()
+    RealtimeFrameRequest request =
+        RealtimeFrameRequest.builder()
             .sessionId("session-1")
             .tensorShape(List.of(1, 3, 2, 2))
             .features(List.of(0.0f, 0.0f, 0.0f, 0.0f))
@@ -79,7 +79,7 @@ class FeedbackStreamManagerTest {
   @DisplayName("should publish and buffer grpc response")
   void publishAndBufferResponse() {
     streamManager.sendFrame(
-        FeedbackFrameRequest.builder()
+        RealtimeFrameRequest.builder()
             .sessionId("session-1")
             .tensorShape(List.of(1, 3, 2, 2))
             .features(List.of(0.0f, 0.0f, 0.0f, 0.0f))
@@ -98,7 +98,7 @@ class FeedbackStreamManagerTest {
                 .build());
 
     verify(messagingTemplate)
-        .convertAndSend(eq("/topic/feedback/session-1"), any(ApiResponse.class));
-    verify(frameBuffer).add(any(FeedbackResponse.class));
+        .convertAndSend(eq("/topic/realtime/session-1"), any(ApiResponse.class));
+    verify(frameBuffer).add(any(RealtimeResponse.class));
   }
 }

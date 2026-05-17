@@ -1,4 +1,4 @@
-package com.interviewmirror.feedback.dto;
+package com.interviewmirror.realtime.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class FeedbackEndRequest {
+public class RealtimeEndRequest {
 
   @NotBlank(message = "sessionId cannot be blank")
   private String sessionId;

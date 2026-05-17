@@ -1,10 +1,10 @@
-package com.interviewmirror.feedback.repository;
+package com.interviewmirror.realtime.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.exception.BusinessException;
 import com.interviewmirror.exception.ErrorCode;
-import com.interviewmirror.feedback.dto.FeedbackResponse;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,17 +17,17 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
-public class FeedbackBufferRepository {
+public class RealtimeBufferRepository {
 
-  private static final String KEY_PREFIX = "feedback:frames:";
+  private static final String KEY_PREFIX = "realtime:frames:";
 
   private final StringRedisTemplate redisTemplate;
   private final ObjectMapper objectMapper;
 
-  @Value("${feedback.buffer.ttl:PT2H}")
+  @Value("${realtime.buffer.ttl:PT2H}")
   private Duration ttl;
 
-  public void appendAll(String sessionId, Collection<FeedbackResponse> responses) {
+  public void appendAll(String sessionId, Collection<RealtimeResponse> responses) {
     if (responses.isEmpty()) {
       return;
     }
@@ -39,7 +39,7 @@ public class FeedbackBufferRepository {
     redisTemplate.expire(key, ttl);
   }
 
-  public List<FeedbackResponse> findAll(String sessionId) {
+  public List<RealtimeResponse> findAll(String sessionId) {
     List<String> payloads = redisTemplate.opsForList().range(key(sessionId), 0, -1);
     if (payloads == null || payloads.isEmpty()) {
       return Collections.emptyList();
@@ -56,19 +56,19 @@ public class FeedbackBufferRepository {
     return KEY_PREFIX + sessionId;
   }
 
-  private String serialize(FeedbackResponse response) {
+  private String serialize(RealtimeResponse response) {
     try {
       return objectMapper.writeValueAsString(response);
     } catch (JsonProcessingException e) {
-      throw new BusinessException(ErrorCode.FEEDBACK_SERIALIZE_FAILED, e);
+      throw new BusinessException(ErrorCode.REALTIME_SERIALIZE_FAILED, e);
     }
   }
 
-  private FeedbackResponse deserialize(String payload) {
+  private RealtimeResponse deserialize(String payload) {
     try {
-      return objectMapper.readValue(payload, FeedbackResponse.class);
+      return objectMapper.readValue(payload, RealtimeResponse.class);
     } catch (JsonProcessingException e) {
-      throw new BusinessException(ErrorCode.FEEDBACK_DESERIALIZE_FAILED, e);
+      throw new BusinessException(ErrorCode.REALTIME_DESERIALIZE_FAILED, e);
     }
   }
 }

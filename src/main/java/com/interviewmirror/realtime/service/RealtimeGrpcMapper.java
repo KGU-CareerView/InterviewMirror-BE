@@ -1,17 +1,17 @@
-package com.interviewmirror.feedback.service;
+package com.interviewmirror.realtime.service;
 
-import com.interviewmirror.feedback.dto.BoundingBoxDto;
-import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.BoundingBox;
 import com.interviewmirror.grpc.proto.FeatureRequest;
+import com.interviewmirror.realtime.dto.BoundingBoxDto;
+import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FeedbackGrpcMapper {
+public class RealtimeGrpcMapper {
 
-  public FeatureRequest toFeatureRequest(FeedbackFrameRequest request) {
+  public FeatureRequest toFeatureRequest(RealtimeFrameRequest request) {
     FeatureRequest.Builder builder =
         FeatureRequest.newBuilder()
             .setSessionId(request.getSessionId())
@@ -25,8 +25,8 @@ public class FeedbackGrpcMapper {
     return builder.build();
   }
 
-  public FeedbackResponse toFeedbackResponse(AnalysisResponse response) {
-    return FeedbackResponse.builder()
+  public RealtimeResponse toRealtimeResponse(AnalysisResponse response) {
+    return RealtimeResponse.builder()
         .sessionId(response.getSessionId())
         .userId(response.getUserId())
         .timestamp(response.getTimestamp())

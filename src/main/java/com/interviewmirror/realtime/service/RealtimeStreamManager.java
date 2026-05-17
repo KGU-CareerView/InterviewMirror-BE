@@ -1,13 +1,13 @@
-package com.interviewmirror.feedback.service;
+package com.interviewmirror.realtime.service;
 
 import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.exception.BusinessException;
 import com.interviewmirror.exception.ErrorCode;
-import com.interviewmirror.feedback.client.EmotionAnalysisClient;
-import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
+import com.interviewmirror.realtime.client.EmotionAnalysisClient;
+import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
 import io.grpc.stub.StreamObserver;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,16 +19,16 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FeedbackStreamManager {
+public class RealtimeStreamManager {
 
   private final EmotionAnalysisClient emotionAnalysisClient;
-  private final FeedbackGrpcMapper feedbackGrpcMapper;
-  private final FeedbackFrameBuffer feedbackFrameBuffer;
+  private final RealtimeGrpcMapper realtimeGrpcMapper;
+  private final RealtimeFrameBuffer realtimeFrameBuffer;
   private final SimpMessagingTemplate messagingTemplate;
   private final Map<String, StreamObserver<FeatureRequest>> streams = new ConcurrentHashMap<>();
 
-  public void sendFrame(FeedbackFrameRequest request) {
-    FeatureRequest featureRequest = feedbackGrpcMapper.toFeatureRequest(request);
+  public void sendFrame(RealtimeFrameRequest request) {
+    FeatureRequest featureRequest = realtimeGrpcMapper.toFeatureRequest(request);
     StreamObserver<FeatureRequest> stream =
         streams.computeIfAbsent(request.getSessionId(), this::createStream);
 
@@ -36,7 +36,7 @@ public class FeedbackStreamManager {
       stream.onNext(featureRequest);
     } catch (RuntimeException e) {
       streams.remove(request.getSessionId());
-      throw new BusinessException(ErrorCode.FEEDBACK_STREAM_SEND_FAILED, e);
+      throw new BusinessException(ErrorCode.REALTIME_STREAM_SEND_FAILED, e);
     }
   }
 
@@ -52,25 +52,25 @@ public class FeedbackStreamManager {
         new StreamObserver<>() {
           @Override
           public void onNext(AnalysisResponse analysisResponse) {
-            FeedbackResponse response = feedbackGrpcMapper.toFeedbackResponse(analysisResponse);
+            RealtimeResponse response = realtimeGrpcMapper.toRealtimeResponse(analysisResponse);
             messagingTemplate.convertAndSend(
-                "/topic/feedback/" + response.getSessionId(), ApiResponse.success(response));
-            feedbackFrameBuffer.add(response);
+                "/topic/realtime/" + response.getSessionId(), ApiResponse.success(response));
+            realtimeFrameBuffer.add(response);
           }
 
           @Override
           public void onError(Throwable throwable) {
             streams.remove(sessionId);
-            log.error("AI feedback stream failed for session {}", sessionId, throwable);
+            log.error("AI realtime stream failed for session {}", sessionId, throwable);
             messagingTemplate.convertAndSend(
-                "/topic/feedback/" + sessionId + "/errors",
+                "/topic/realtime/" + sessionId + "/errors",
                 ApiResponse.fail(ErrorCode.AI_STREAM_FAILED));
           }
 
           @Override
           public void onCompleted() {
             streams.remove(sessionId);
-            log.debug("AI feedback stream completed for session {}", sessionId);
+            log.debug("AI realtime stream completed for session {}", sessionId);
           }
         };
 

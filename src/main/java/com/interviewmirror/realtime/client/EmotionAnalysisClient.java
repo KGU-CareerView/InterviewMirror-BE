@@ -1,4 +1,4 @@
-package com.interviewmirror.feedback.client;
+package com.interviewmirror.realtime.client;
 
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;

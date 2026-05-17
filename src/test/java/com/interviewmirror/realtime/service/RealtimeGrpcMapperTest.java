@@ -1,27 +1,27 @@
-package com.interviewmirror.feedback.service;
+package com.interviewmirror.realtime.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.interviewmirror.feedback.dto.BoundingBoxDto;
-import com.interviewmirror.feedback.dto.FeedbackFrameRequest;
-import com.interviewmirror.feedback.dto.FeedbackResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.BoundingBox;
 import com.interviewmirror.grpc.proto.FeatureRequest;
+import com.interviewmirror.realtime.dto.BoundingBoxDto;
+import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("FeedbackGrpcMapper Tests")
-class FeedbackGrpcMapperTest {
+@DisplayName("RealtimeGrpcMapper Tests")
+class RealtimeGrpcMapperTest {
 
-  private final FeedbackGrpcMapper mapper = new FeedbackGrpcMapper();
+  private final RealtimeGrpcMapper mapper = new RealtimeGrpcMapper();
 
   @Test
   @DisplayName("should map websocket request to grpc FeatureRequest")
   void toFeatureRequest() {
-    FeedbackFrameRequest request =
-        FeedbackFrameRequest.builder()
+    RealtimeFrameRequest request =
+        RealtimeFrameRequest.builder()
             .sessionId("session-1")
             .userId("user-1")
             .tensorShape(List.of(1, 3, 2, 2))
@@ -47,7 +47,7 @@ class FeedbackGrpcMapperTest {
 
   @Test
   @DisplayName("should map grpc AnalysisResponse to websocket response")
-  void toFeedbackResponse() {
+  void toRealtimeResponse() {
     AnalysisResponse response =
         AnalysisResponse.newBuilder()
             .setSessionId("session-1")
@@ -60,7 +60,7 @@ class FeedbackGrpcMapperTest {
             .setBbox(BoundingBox.newBuilder().setX1(10).setY1(20).setX2(30).setY2(40).build())
             .build();
 
-    FeedbackResponse result = mapper.toFeedbackResponse(response);
+    RealtimeResponse result = mapper.toRealtimeResponse(response);
 
     assertThat(result.getSessionId()).isEqualTo("session-1");
     assertThat(result.getUserId()).isEqualTo("user-1");

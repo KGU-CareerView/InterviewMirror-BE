@@ -1,7 +1,7 @@
-package com.interviewmirror.feedback.service;
+package com.interviewmirror.realtime.service;
 
-import com.interviewmirror.feedback.dto.FeedbackResponse;
-import com.interviewmirror.feedback.repository.FeedbackBufferRepository;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
+import com.interviewmirror.realtime.repository.RealtimeBufferRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,16 +17,16 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class FeedbackFrameBuffer {
+public class RealtimeFrameBuffer {
 
-  private final FeedbackBufferRepository feedbackBufferRepository;
-  private final Map<String, Queue<FeedbackResponse>> buffers = new ConcurrentHashMap<>();
+  private final RealtimeBufferRepository realtimeBufferRepository;
+  private final Map<String, Queue<RealtimeResponse>> buffers = new ConcurrentHashMap<>();
 
-  @Value("${feedback.buffer.max-size-per-session:1000}")
+  @Value("${realtime.buffer.max-size-per-session:1000}")
   private int maxSizePerSession;
 
-  public void add(FeedbackResponse response) {
-    Queue<FeedbackResponse> queue =
+  public void add(RealtimeResponse response) {
+    Queue<RealtimeResponse> queue =
         buffers.computeIfAbsent(response.getSessionId(), key -> new ConcurrentLinkedQueue<>());
     queue.offer(response);
 
@@ -35,32 +35,32 @@ public class FeedbackFrameBuffer {
     }
   }
 
-  @Scheduled(fixedDelayString = "${feedback.buffer.flush-interval-ms:2000}")
+  @Scheduled(fixedDelayString = "${realtime.buffer.flush-interval-ms:2000}")
   public void flushAll() {
     buffers.keySet().forEach(this::flushSession);
   }
 
   public void flushSession(String sessionId) {
-    Queue<FeedbackResponse> queue = buffers.get(sessionId);
+    Queue<RealtimeResponse> queue = buffers.get(sessionId);
     if (queue == null || queue.isEmpty()) {
       return;
     }
 
-    List<FeedbackResponse> drained = drain(queue);
+    List<RealtimeResponse> drained = drain(queue);
     if (drained.isEmpty()) {
       return;
     }
 
-    feedbackBufferRepository.appendAll(sessionId, drained);
+    realtimeBufferRepository.appendAll(sessionId, drained);
     if (queue.isEmpty()) {
       buffers.remove(sessionId, queue);
     }
-    log.debug("Flushed {} feedback frames for session {}", drained.size(), sessionId);
+    log.debug("Flushed {} realtime frames for session {}", drained.size(), sessionId);
   }
 
-  private List<FeedbackResponse> drain(Queue<FeedbackResponse> queue) {
-    List<FeedbackResponse> responses = new ArrayList<>();
-    FeedbackResponse response;
+  private List<RealtimeResponse> drain(Queue<RealtimeResponse> queue) {
+    List<RealtimeResponse> responses = new ArrayList<>();
+    RealtimeResponse response;
     while ((response = queue.poll()) != null) {
       responses.add(response);
     }

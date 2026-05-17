@@ -1,22 +1,16 @@
 package com.interviewmirror.interview.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
 import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
-import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.user.entity.User;
 import com.interviewmirror.user.repository.UserRepository;
@@ -28,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,7 +30,6 @@ import org.springframework.test.web.servlet.MockMvc;
 class InterviewPreparationControllerTest {
 
   @Autowired private MockMvc mockMvc;
-  @Autowired private ObjectMapper objectMapper;
 
   @MockitoBean private InterviewPreparationService preparationService;
 
@@ -86,26 +78,6 @@ class InterviewPreparationControllerTest {
     user.setId(USER_ID);
     mockUser = new CustomUserDetails(user);
     given(customUserDetails.getId()).willReturn(USER_ID);
-  }
-
-  @Test
-  @DisplayName("면접 사전 설정 저장 API [POST] - 성공 시 201 상태와 세션 ID 반환")
-  void saveInterviewSetting_Success() throws Exception {
-    InterviewSettingRequest request =
-        new InterviewSettingRequest("BACKEND", "TECH", "NORMAL", 5, 30, "Spring Boot 경험...");
-    given(preparationService.saveSetting(eq(SESSION_ID), eq(USER_ID), any())).willReturn(100L);
-
-    // 💡 경로 수정: settings/save/{sessionId}
-    mockMvc
-        .perform(
-            post("/v1/preparation/settings/save/{sessionId}", SESSION_ID)
-                .with(user(mockUser))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-        .andDo(print())
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.settingId").value(100L));
   }
 
   @Test

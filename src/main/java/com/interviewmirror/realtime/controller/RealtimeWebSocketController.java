@@ -2,6 +2,8 @@ package com.interviewmirror.realtime.controller;
 
 import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.common.dto.MessageResponse;
+import com.interviewmirror.interview.service.SessionService;
+import com.interviewmirror.realtime.dto.RealtimeAnswerRequest;
 import com.interviewmirror.realtime.dto.RealtimeEndRequest;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
 import com.interviewmirror.realtime.service.RealtimeService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Controller;
 public class RealtimeWebSocketController {
 
   private final RealtimeService realtimeService;
+  private final SessionService sessionService;
 
   @MessageMapping("/realtime.frames")
   public void analyzeFrame(@Valid @Payload RealtimeFrameRequest request) {
@@ -25,5 +28,14 @@ public class RealtimeWebSocketController {
   @MessageMapping("/realtime.end")
   public ApiResponse<MessageResponse> completeSession(@Valid @Payload RealtimeEndRequest request) {
     return ApiResponse.success(realtimeService.completeSession(request));
+  }
+
+  @MessageMapping("/session.answer")
+  public void submitAnswer(@Valid @Payload RealtimeAnswerRequest request) {
+    sessionService.processAnswerAndGenerateQuestion(
+        request.getSessionId(),
+        request.getAnswer(),
+        request.getEmotionResult(),
+        request.getResponseTimeSeconds());
   }
 }

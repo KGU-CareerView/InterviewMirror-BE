@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewReport;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewReportRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
@@ -28,7 +29,11 @@ class InterviewRepositoryTest {
   @DisplayName("InterviewResult 생성 시 자식 엔티티(Detail)가 같이 저장되는지 검증 (Cascade)")
   void saveResultWithDetails_Success() {
     // given
-    InterviewResult result = InterviewResult.builder().userId(1L).sessionState("END").build();
+    InterviewResult result =
+        InterviewResult.builder()
+            .userId(1L)
+            .sessionState(InterviewSessionState.ENDED.name())
+            .build();
 
     InterviewDetail detail1 =
         InterviewDetail.builder().interviewResult(result).question("Spring Boot의 장점은?").build();
@@ -51,7 +56,11 @@ class InterviewRepositoryTest {
   void saveReport_Success() {
     // given
     InterviewResult result =
-        resultRepository.save(InterviewResult.builder().userId(2L).sessionState("END").build());
+        resultRepository.save(
+            InterviewResult.builder()
+                .userId(2L)
+                .sessionState(InterviewSessionState.ENDED.name())
+                .build());
 
     InterviewReport report =
         InterviewReport.builder()

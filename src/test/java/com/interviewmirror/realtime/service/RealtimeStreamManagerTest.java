@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
-import com.interviewmirror.realtime.client.EmotionAnalysisClient;
+import com.interviewmirror.realtime.client.AiGrpcClient;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
 import com.interviewmirror.realtime.dto.RealtimeResponse;
 import io.grpc.stub.StreamObserver;
@@ -25,7 +25,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 class RealtimeStreamManagerTest {
 
   private final RealtimeGrpcMapper mapper = new RealtimeGrpcMapper();
-  private final EmotionAnalysisClient client = mock(EmotionAnalysisClient.class);
+  private final AiGrpcClient client = mock(AiGrpcClient.class);
   private final RealtimeFrameBuffer frameBuffer = mock(RealtimeFrameBuffer.class);
   private final SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
   private final AtomicReference<StreamObserver<AnalysisResponse>> responseObserver =

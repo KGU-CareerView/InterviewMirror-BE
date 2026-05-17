@@ -6,12 +6,14 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
+import com.interviewmirror.realtime.service.RealtimeMessagePublisher;
+import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +26,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -54,11 +55,11 @@ class SessionServiceTest {
 
   @Mock private RedisSessionService redisSessionService;
 
-  @Mock private AiGrpcClient aiGrpcClient;
+  @Mock private RealtimeQuestionGenerationService questionGenerationService;
+
+  @Mock private RealtimeMessagePublisher realtimeMessagePublisher;
 
   @Mock private RabbitMQProducer rabbitMQProducer;
-
-  @Mock private SimpMessagingTemplate messagingTemplate;
 
   // 실제 동작하는 ObjectMapper를 Spy로 주입
   @Spy private ObjectMapper objectMapper = new ObjectMapper();
@@ -72,7 +73,7 @@ class SessionServiceTest {
         InterviewResult.builder()
             .sessionId(100L)
             .userId(userId)
-            .sessionState("pause")
+            .sessionState(InterviewSessionState.READY.name())
             .createTime(LocalDateTime.now())
             .build();
 
@@ -82,19 +83,23 @@ class SessionServiceTest {
     Long sessionId = sessionService.createSession(userId);
 
     // then
-    verify(redisSessionService).updateSessionState(100L, "pause");
+    verify(redisSessionService).updateSessionState(100L, InterviewSessionState.READY.name());
     assert sessionId == 100L;
   }
 
   @Test
-  @DisplayName("면접 종료 테스트 (END) - afterCommit 콜백 실행 검증")
+  @DisplayName("면접 종료 테스트 (ENDED) - afterCommit 콜백 실행 검증")
   void changeStateEndTest() {
     // given
     Long sessionId = 1L;
     Long userId = 1L;
 
     InterviewResult mockResult =
-        InterviewResult.builder().sessionId(sessionId).userId(userId).sessionState("pause").build();
+        InterviewResult.builder()
+            .sessionId(sessionId)
+            .userId(userId)
+            .sessionState(InterviewSessionState.IN_PROGRESS.name())
+            .build();
 
     given(resultRepository.findById(sessionId)).willReturn(Optional.of(mockResult));
 
@@ -102,7 +107,7 @@ class SessionServiceTest {
     given(redisSessionService.getQaList(sessionId)).willReturn(List.of(validJson));
 
     // when
-    sessionService.changeState(sessionId, userId, "end");
+    sessionService.changeState(sessionId, userId, InterviewSessionState.ENDED.name());
 
     List<TransactionSynchronization> synchronizations =
         TransactionSynchronizationManager.getSynchronizations();
@@ -111,22 +116,20 @@ class SessionServiceTest {
     }
 
     // then
-    verify(redisSessionService).updateSessionState(sessionId, "end");
+    verify(redisSessionService).updateSessionState(sessionId, InterviewSessionState.ENDED.name());
     verify(detailRepository, times(1)).save(any(InterviewDetail.class));
     verify(redisSessionService).clearQaList(sessionId);
     verify(rabbitMQProducer).sendReportRequest(sessionId);
   }
 
   @Test
-  @DisplayName("답변 처리 및 AI 질문 생성 테스트 - 정상 흐름 검증 (Redis, gRPC, WebSocket 연동)")
+  @DisplayName("답변 처리 후 꼬리 질문 생성을 realtime 서비스에 위임한다.")
   void processAnswerAndGenerateQuestionTest() throws Exception {
     // given
     Long sessionId = 1L;
     String answer = "이것은 답변입니다.";
 
     given(redisSessionService.getLastQuestion(sessionId)).willReturn("이전 질문입니다.");
-    given(redisSessionService.lockQuestionGeneration(sessionId)).willReturn(true);
-    given(aiGrpcClient.generateNextQuestion(sessionId, answer)).willReturn("다음 질문입니다.");
 
     // when
     String emotionResult = "HAPPY";
@@ -137,8 +140,6 @@ class SessionServiceTest {
 
     // then
     verify(redisSessionService).addQaToRedis(eq(sessionId), anyString());
-    verify(aiGrpcClient).generateNextQuestion(sessionId, answer);
-    verify(redisSessionService).setLastQuestion(sessionId, "다음 질문입니다.");
-    verify(messagingTemplate).convertAndSend(eq("/topic/session/1/question"), anyMap());
+    verify(questionGenerationService).generateFollowUpQuestion(sessionId, "이전 질문입니다.", answer);
   }
 }

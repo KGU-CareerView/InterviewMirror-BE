@@ -1,24 +1,22 @@
 package com.interviewmirror.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.exception.InterviewException;
-import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
+import com.interviewmirror.realtime.service.RealtimeMessagePublisher;
+import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -31,9 +29,9 @@ public class SessionService {
   private final InterviewResultRepository resultRepository;
   private final InterviewDetailRepository detailRepository;
   private final RedisSessionService redisSessionService;
-  private final SimpMessagingTemplate messagingTemplate;
 
-  private final AiGrpcClient aiGrpcClient;
+  private final RealtimeQuestionGenerationService questionGenerationService;
+  private final RealtimeMessagePublisher realtimeMessagePublisher;
   private final RabbitMQProducer rabbitMQProducer;
   private final ObjectMapper objectMapper; // JSON 직렬화용
 
@@ -43,32 +41,39 @@ public class SessionService {
         resultRepository.save(
             InterviewResult.builder()
                 .userId(userId)
-                .sessionState("pause")
+                .sessionState(InterviewSessionState.READY.name())
                 .createTime(LocalDateTime.now())
                 .build());
 
     Long generatedSessionId = savedResult.getSessionId();
-    redisSessionService.updateSessionState(generatedSessionId, "pause");
+    redisSessionService.updateSessionState(generatedSessionId, InterviewSessionState.READY.name());
     return generatedSessionId;
   }
 
   @Transactional
   public void changeState(Long sessionId, Long userId, String state) {
-
-    // [입력값 검증] 유효한 상태값인지 먼저 확인
-    Set<String> validStates = Set.of("start", "pause", "resume", "end");
-    if (state == null || !validStates.contains(state.toLowerCase())) {
-      log.warn("[SessionID: {}] 잘못된 상태 변경 요청 시도 - 입력된 상태값: {}", sessionId, state);
-      throw new InterviewException(ErrorCode.VALIDATION_ERROR);
-    }
+    InterviewSessionState nextState = InterviewSessionState.from(state);
 
     // ✨ [리팩토링 완료] 공통 검증 로직을 사용하여 코드가 1줄로 단축되었습니다!
     InterviewResult result = getValidatedSession(sessionId, userId);
+    applyStateChange(sessionId, result, nextState);
+  }
 
-    result.setSessionState(state);
+  @Transactional
+  public void changeStateBySystem(Long sessionId, InterviewSessionState nextState) {
+    InterviewResult result =
+        resultRepository
+            .findById(sessionId)
+            .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_NOT_FOUND));
+    applyStateChange(sessionId, result, nextState);
+  }
 
-    // [DB 작업] pause/end 시 문답 리스트 DB 저장
-    if ("pause".equalsIgnoreCase(state) || "end".equalsIgnoreCase(state)) {
+  private void applyStateChange(
+      Long sessionId, InterviewResult result, InterviewSessionState nextState) {
+    result.setSessionState(nextState.name());
+
+    // [DB 작업] PAUSED/ENDED 시 문답 리스트 DB 저장
+    if (nextState.shouldPersistQa()) {
       List<String> qaJsonList = redisSessionService.getQaList(sessionId);
 
       if (qaJsonList != null && !qaJsonList.isEmpty()) {
@@ -102,12 +107,12 @@ public class SessionService {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            redisSessionService.updateSessionState(sessionId, state);
+            redisSessionService.updateSessionState(sessionId, nextState.name());
 
-            if ("pause".equalsIgnoreCase(state) || "end".equalsIgnoreCase(state)) {
+            if (nextState.shouldPersistQa()) {
               redisSessionService.clearQaList(sessionId);
 
-              if ("end".equalsIgnoreCase(state)) {
+              if (nextState == InterviewSessionState.ENDED) {
                 rabbitMQProducer.sendReportRequest(sessionId);
               }
             }
@@ -115,7 +120,6 @@ public class SessionService {
         });
   }
 
-  @Async("aiTaskExecutor")
   public void processAnswerAndGenerateQuestion(
       Long sessionId, String answer, String emotionResult, Integer responseTimeSeconds) {
     String question = redisSessionService.getLastQuestion(sessionId);
@@ -133,34 +137,11 @@ public class SessionService {
       redisSessionService.addQaToRedis(sessionId, qaJson);
     } catch (Exception e) {
       log.error("Redis 문답 JSON 직렬화 실패: {}", e.getMessage());
-      messagingTemplate.convertAndSend(
-          "/topic/session/" + sessionId + "/error",
-          ApiResponse.fail(ErrorCode.SERVER_INTERNAL_ERROR));
+      realtimeMessagePublisher.publishSessionError(sessionId, ErrorCode.SERVER_INTERNAL_ERROR);
       return;
     }
 
-    if (!redisSessionService.lockQuestionGeneration(sessionId)) {
-      log.warn("[SessionID: {}] AI 질문 생성 중복 요청 감지. 이미 처리 중입니다.", sessionId);
-      messagingTemplate.convertAndSend(
-          "/topic/session/" + sessionId + "/error",
-          Map.of(
-              "type", "PROCESSING_WARNING",
-              "message", "현재 AI가 답변을 분석하여 질문을 생성 중입니다. 잠시만 기다려주세요."));
-      return;
-    }
-
-    try {
-      String nextQuestion = aiGrpcClient.generateNextQuestion(sessionId, answer);
-      redisSessionService.setLastQuestion(sessionId, nextQuestion);
-      messagingTemplate.convertAndSend(
-          "/topic/session/" + sessionId + "/question",
-          Map.of("type", "NEXT_QUESTION", "question", nextQuestion));
-    } catch (Exception e) {
-      messagingTemplate.convertAndSend(
-          "/topic/session/" + sessionId + "/error", ApiResponse.fail(ErrorCode.AI_RESPONSE_FAILED));
-    } finally {
-      redisSessionService.unlockQuestionGeneration(sessionId);
-    }
+    questionGenerationService.generateFollowUpQuestion(sessionId, safeQuestion, answer);
   }
 
   @Transactional
@@ -169,16 +150,6 @@ public class SessionService {
 
     // 검증을 통과했을 때만 URL 저장
     result.setVideoUrl(videoUrl);
-  }
-
-  public String processAndBroadcastEmotion(Long sessionId, String facialData) {
-    String emotionResult = aiGrpcClient.analyzeEmotion(sessionId, facialData);
-
-    messagingTemplate.convertAndSend(
-        "/topic/session/" + sessionId + "/emotion",
-        Map.of("type", "EMOTION_UPDATE", "emotion", emotionResult));
-
-    return emotionResult;
   }
 
   /**
@@ -203,18 +174,18 @@ public class SessionService {
   }
 
   /**
-   * [시스템 전용] 웹소켓 연결 끊김 등 비정상 종료 시 자동으로 세션을 pause 처리합니다. 사용자가 직접 요청하는 것이 아니므로 userId 권한 검증을 생략합니다.
+   * [시스템 전용] 웹소켓 연결 끊김 등 비정상 종료 시 자동으로 세션을 PAUSED 처리합니다. 사용자가 직접 요청하는 것이 아니므로 userId 권한 검증을 생략합니다.
    */
   @Transactional
   public void autoPauseSession(Long sessionId) {
     // 1. 세션 조회 (만약 이미 없거나 끝난 세션이면 무시)
     InterviewResult result = resultRepository.findById(sessionId).orElse(null);
-    if (result == null || "end".equalsIgnoreCase(result.getSessionState())) {
+    if (result == null || InterviewSessionState.ENDED.name().equals(result.getSessionState())) {
       return;
     }
 
-    log.info("[SessionID: {}] 비정상 종료 감지. 시스템이 자동으로 pause 상태로 전환합니다.", sessionId);
-    result.setSessionState("pause");
+    log.info("[SessionID: {}] 비정상 종료 감지. 시스템이 자동으로 PAUSED 상태로 전환합니다.", sessionId);
+    result.setSessionState(InterviewSessionState.PAUSED.name());
 
     // 2. Redis에 임시 저장되어 있던 문답 내역을 DB로 안전하게 대피 (기존 로직 재사용)
     List<String> qaJsonList = redisSessionService.getQaList(sessionId);
@@ -248,7 +219,7 @@ public class SessionService {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            redisSessionService.updateSessionState(sessionId, "pause");
+            redisSessionService.updateSessionState(sessionId, InterviewSessionState.PAUSED.name());
             redisSessionService.clearQaList(sessionId);
           }
         });

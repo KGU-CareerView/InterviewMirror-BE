@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS interview_settings (
                                                   id BIGINT PRIMARY KEY AUTO_INCREMENT,
                                                   user_id BIGINT NOT NULL,
+                                                  session_id BIGINT,
                                                   category VARCHAR(100),          -- 분야 (예: 개발, 마케팅)
     interview_type VARCHAR(50),     -- 유형 (인성, 직무, 종합)
     difficulty VARCHAR(20),         -- 난이도 (상, 중, 하)

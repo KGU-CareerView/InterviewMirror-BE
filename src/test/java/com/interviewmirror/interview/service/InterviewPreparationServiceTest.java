@@ -7,18 +7,18 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.interviewmirror.infrastructure.AiGrpcClient;
-import com.interviewmirror.interview.dto.AnswerTipRequest;
-import com.interviewmirror.interview.dto.AnswerTipResponse;
 import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
+import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,7 +28,7 @@ class InterviewPreparationServiceTest {
 
   @Mock private InterviewSettingRepository settingRepository;
 
-  @Mock private AiGrpcClient aiGrpcClient;
+  @Mock private RealtimeQuestionGenerationService questionGenerationService;
 
   @Mock private SessionService sessionService; // 공통 검증 로직을 위한 세션 서비스 모킹
 
@@ -38,7 +38,7 @@ class InterviewPreparationServiceTest {
   private final Long USER_ID = 1L;
 
   @Test
-  @DisplayName("면접 사전 설정을 성공적으로 저장하고 AI 서버에 질문 생성을 요청한다.")
+  @DisplayName("면접 사전 설정을 저장하고 세션 시작 후 초기 질문 생성을 요청한다.")
   void saveSetting_Success() {
     // given
     InterviewSettingRequest request =
@@ -58,9 +58,14 @@ class InterviewPreparationServiceTest {
 
     // then
     verify(sessionService, times(1)).getValidatedSession(SESSION_ID, USER_ID);
-    verify(settingRepository, times(1)).save(any(InterviewSetting.class));
-    verify(aiGrpcClient, times(1))
-        .requestInitialQuestions("BACKEND", "TECH", "NORMAL", 5, "Spring Boot 경험...");
+    verify(sessionService, times(1))
+        .changeState(SESSION_ID, USER_ID, InterviewSessionState.PREPARING.name());
+    ArgumentCaptor<InterviewSetting> settingCaptor =
+        ArgumentCaptor.forClass(InterviewSetting.class);
+    verify(settingRepository, times(1)).save(settingCaptor.capture());
+    assertEquals(USER_ID, settingCaptor.getValue().getUserId());
+    verify(questionGenerationService, times(1))
+        .generateInitialQuestions(SESSION_ID, USER_ID, request);
   }
 
   @Test
@@ -94,20 +99,5 @@ class InterviewPreparationServiceTest {
     assertEquals("BACKEND", result.getCategory());
     assertEquals(100L, result.getSettingId()); // DTO에 포함된 ID 검증
     verify(sessionService, times(1)).getValidatedSession(SESSION_ID, USER_ID);
-  }
-
-  @Test
-  @DisplayName("답변 팁 생성 요청 시 AI 서버로부터 응답을 받아 반환한다.")
-  void generateAnswerTip_Success() {
-    // given
-    AnswerTipRequest request = new AnswerTipRequest("질문입니다", "이력서입니다");
-    given(aiGrpcClient.requestTipGeneration("질문입니다", "이력서입니다")).willReturn("이러이러하게 답변하세요.");
-
-    // when
-    AnswerTipResponse response = preparationService.generateAnswerTip(request);
-
-    // then
-    assertEquals("이러이러하게 답변하세요.", response.getTip());
-    verify(aiGrpcClient, times(1)).requestTipGeneration("질문입니다", "이력서입니다");
   }
 }

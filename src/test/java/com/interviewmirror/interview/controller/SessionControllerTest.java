@@ -14,9 +14,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
+import com.interviewmirror.interview.dto.InterviewSettingRequest;
+import com.interviewmirror.interview.dto.InterviewSettingResponse;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.interview.service.InterviewService;
 import com.interviewmirror.interview.service.RedisSessionService;
@@ -32,7 +34,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -46,8 +47,6 @@ class SessionControllerTest {
   @MockitoBean private SessionService sessionService;
   @MockitoBean private RedisSessionService redisSessionService;
   @MockitoBean private S3Service s3Service;
-  @MockitoBean private AiGrpcClient aiGrpcClient;
-  @MockitoBean private SimpMessagingTemplate messagingTemplate;
   @MockitoBean private InterviewService interviewService;
   @MockitoBean private InterviewPreparationService interviewPreparationService;
   @MockitoBean private RabbitMQProducer rabbitMQProducer;
@@ -113,13 +112,36 @@ class SessionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.sessionId").value(SESSION_ID))
+        .andExpect(jsonPath("$.data.sessionState").value(InterviewSessionState.READY.name()))
         .andDo(print());
+  }
+
+  @Test
+  @DisplayName("면접 시작 API [POST] - 성공 시 202 반환")
+  void startInterviewApiTest() throws Exception {
+    InterviewSettingRequest request =
+        new InterviewSettingRequest("BACKEND", "TECH", "NORMAL", 5, 30, "Spring Boot 경험...");
+    given(interviewPreparationService.saveSetting(eq(SESSION_ID), eq(USER_ID), any()))
+        .willReturn(InterviewSettingResponse.builder().settingId(10L).build());
+
+    mockMvc
+        .perform(
+            post(BASE_URL + "/{sessionID}/start", SESSION_ID)
+                .with(user(testUserDetails))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.data.settingId").value(10L))
+        .andDo(print());
+
+    verify(interviewPreparationService).saveSetting(eq(SESSION_ID), eq(USER_ID), any());
   }
 
   @Test
   @DisplayName("상태 변경 API [PATCH] - 성공 시 200 반환")
   void updateSessionStatusApiTest() throws Exception {
-    String requestJson = "{\"status\": \"START\"}";
+    String requestJson = "{\"status\": \"PAUSED\"}";
 
     mockMvc
         .perform(
@@ -132,18 +154,20 @@ class SessionControllerTest {
         .andExpect(jsonPath("$.data.Result").value("SUCCESS"))
         .andDo(print());
 
-    verify(sessionService).changeState(eq(SESSION_ID), eq(USER_ID), eq("START"));
+    verify(sessionService)
+        .changeState(eq(SESSION_ID), eq(USER_ID), eq(InterviewSessionState.PAUSED.name()));
   }
 
   @Test
   @DisplayName("세션 상태 조회 API [GET] - 성공 시 200 반환")
   void getSessionStateApiTest() throws Exception {
-    given(redisSessionService.getSessionState(SESSION_ID)).willReturn("START");
+    given(redisSessionService.getSessionState(SESSION_ID))
+        .willReturn(InterviewSessionState.IN_PROGRESS.name());
 
     mockMvc
         .perform(get(BASE_URL + "/{sessionID}", SESSION_ID).with(user(testUserDetails)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.sessionState").value("START"))
+        .andExpect(jsonPath("$.data.sessionState").value(InterviewSessionState.IN_PROGRESS.name()))
         .andDo(print());
   }
 
@@ -165,46 +189,5 @@ class SessionControllerTest {
         .andDo(print());
 
     verify(sessionService).saveVideoUrl(eq(SESSION_ID), eq(USER_ID), eq(videoUrl));
-  }
-
-  @Test
-  @DisplayName("답변 제출 API [POST] - 성공 시 응답 확인")
-  void submitAnswerApiTest() throws Exception {
-    String requestJson =
-        "{\"answer\": \"제 답변입니다.\", \"emotionResult\": \"HAPPY\", \"responseTimeSeconds\": 15}";
-
-    mockMvc
-        .perform(
-            post(BASE_URL + "/{sessionID}/answer", SESSION_ID)
-                .with(user(testUserDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-        .andDo(print())
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.success").value(true));
-
-    verify(sessionService)
-        .processAnswerAndGenerateQuestion(eq(SESSION_ID), eq("제 답변입니다."), eq("HAPPY"), eq(15));
-  }
-
-  @Test
-  @DisplayName("감정 분석 API [POST] - 성공 시 200 반환")
-  void analyzeEmotionApiTest() throws Exception {
-    String facialData = "face_data_sample";
-    given(sessionService.processAndBroadcastEmotion(SESSION_ID, facialData)).willReturn("SMILE");
-
-    String requestJson = "{\"data\": \"" + facialData + "\"}";
-
-    mockMvc
-        .perform(
-            post(BASE_URL + "/{sessionID}/emotion", SESSION_ID)
-                .with(user(testUserDetails))
-                .with(csrf())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.data.result").value("SMILE"))
-        .andDo(print());
   }
 }

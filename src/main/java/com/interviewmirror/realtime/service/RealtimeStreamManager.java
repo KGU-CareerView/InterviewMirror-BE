@@ -5,7 +5,7 @@ import com.interviewmirror.exception.BusinessException;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
-import com.interviewmirror.realtime.client.EmotionAnalysisClient;
+import com.interviewmirror.realtime.client.AiGrpcClient;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
 import com.interviewmirror.realtime.dto.RealtimeResponse;
 import io.grpc.stub.StreamObserver;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RealtimeStreamManager {
 
-  private final EmotionAnalysisClient emotionAnalysisClient;
+  private final AiGrpcClient aiGrpcClient;
   private final RealtimeGrpcMapper realtimeGrpcMapper;
   private final RealtimeFrameBuffer realtimeFrameBuffer;
   private final SimpMessagingTemplate messagingTemplate;
@@ -74,6 +74,6 @@ public class RealtimeStreamManager {
           }
         };
 
-    return emotionAnalysisClient.startAnalysisStream(responseObserver);
+    return aiGrpcClient.startAnalysisStream(responseObserver);
   }
 }

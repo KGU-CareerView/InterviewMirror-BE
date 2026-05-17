@@ -18,6 +18,7 @@ import com.interviewmirror.interview.dto.InterviewReportResponse;
 import com.interviewmirror.interview.dto.InterviewResultResponse;
 import com.interviewmirror.interview.entity.InterviewReport;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.repository.InterviewReportRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
 import java.util.Collections;
@@ -52,7 +53,7 @@ public class InterviewServiceTest {
         InterviewResult.builder()
             .sessionId(sessionId)
             .userId(userId)
-            .sessionState("END")
+            .sessionState(InterviewSessionState.ENDED.name())
             .emotionGraph("{\"happy\": 0.8}") // 데이터가 있는 상태
             .details(
                 Collections.emptyList()) // 💡 핵심: Service에서 .stream()을 호출하므로 Null 방지를 위해 빈 리스트 주입

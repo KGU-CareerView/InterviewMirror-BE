@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,7 @@ class RedisSessionServiceTest {
   void updateSessionState_Success() {
     // given
     Long sessionId = 1L;
-    String newState = "START";
+    String newState = InterviewSessionState.IN_PROGRESS.name();
     String redisKey = "session:" + sessionId;
 
     // opsForHash() 호출 시 가짜 hashOperations 반환

@@ -1,18 +1,20 @@
 package com.interviewmirror.interview.service;
 
-import com.interviewmirror.infrastructure.AiGrpcClient;
-import com.interviewmirror.interview.dto.AnswerTipRequest;
-import com.interviewmirror.interview.dto.AnswerTipResponse;
 import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
+import com.interviewmirror.interview.dto.InterviewSettingResponse;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
+import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -20,16 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class InterviewPreparationService {
 
   private final InterviewSettingRepository settingRepository;
-  private final AiGrpcClient aiGrpcClient;
+  private final RealtimeQuestionGenerationService questionGenerationService;
   private final SessionService sessionService;
 
   @Transactional
-  public Long saveSetting(Long sessionId, Long userId, InterviewSettingRequest request) {
+  public InterviewSettingResponse saveSetting(
+      Long sessionId, Long userId, InterviewSettingRequest request) {
     InterviewResult session = sessionService.getValidatedSession(sessionId, userId);
 
     InterviewSetting setting =
         InterviewSetting.builder()
             .interviewResult(session)
+            .userId(userId)
             .category(request.getCategory())
             .interviewType(request.getInterviewType())
             .difficulty(request.getDifficulty())
@@ -41,14 +45,11 @@ public class InterviewPreparationService {
     InterviewSetting savedSetting = settingRepository.save(setting);
     log.info("[SessionID: {}] 면접 사전 설정 완료. Setting ID: {}", sessionId, savedSetting.getSettingId());
 
-    aiGrpcClient.requestInitialQuestions(
-        request.getCategory(),
-        request.getInterviewType(),
-        request.getDifficulty(),
-        request.getQuestionCount(),
-        request.getResumeContent());
+    sessionService.changeState(sessionId, userId, InterviewSessionState.PREPARING.name());
+    runAfterCommit(
+        () -> questionGenerationService.generateInitialQuestions(sessionId, userId, request));
 
-    return savedSetting.getSettingId();
+    return InterviewSettingResponse.builder().settingId(savedSetting.getSettingId()).build();
   }
 
   @Transactional(readOnly = true)
@@ -75,9 +76,18 @@ public class InterviewPreparationService {
         .build();
   }
 
-  public AnswerTipResponse generateAnswerTip(AnswerTipRequest request) {
-    String generatedTip =
-        aiGrpcClient.requestTipGeneration(request.getQuestion(), request.getResumeContent());
-    return AnswerTipResponse.builder().tip(generatedTip).build();
+  private void runAfterCommit(Runnable runnable) {
+    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+      runnable.run();
+      return;
+    }
+
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            runnable.run();
+          }
+        });
   }
 }

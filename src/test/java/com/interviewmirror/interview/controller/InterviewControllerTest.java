@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
 import com.interviewmirror.interview.dto.InterviewReportResponse;
@@ -21,6 +20,7 @@ import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.interview.service.InterviewService;
 import com.interviewmirror.interview.service.RedisSessionService;
 import com.interviewmirror.interview.service.SessionService;
+import com.interviewmirror.realtime.client.AiGrpcClient;
 import com.interviewmirror.user.repository.UserRepository;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +31,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -48,7 +47,6 @@ public class InterviewControllerTest {
   @MockitoBean private S3Service s3Service;
   @MockitoBean private AiGrpcClient aiGrpcClient;
   @MockitoBean private RabbitMQProducer rabbitMQProducer;
-  @MockitoBean private SimpMessagingTemplate messagingTemplate;
   @MockitoBean private JwtTokenProvider jwtTokenProvider;
   @MockitoBean private CustomUserDetails customUserDetails;
   @MockitoBean private UserRepository userRepository;

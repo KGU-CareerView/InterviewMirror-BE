@@ -21,6 +21,9 @@ public class InterviewSetting {
   @JoinColumn(name = "session_id")
   private InterviewResult interviewResult;
 
+  @Column(name = "user_id", nullable = false)
+  private Long userId;
+
   @Column(length = 50)
   private String category; // 분야
 

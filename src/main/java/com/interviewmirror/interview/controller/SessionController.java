@@ -4,18 +4,19 @@ import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.exception.InterviewException;
-import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.S3Service;
 import com.interviewmirror.interview.dto.*;
+import com.interviewmirror.interview.entity.InterviewSessionState;
+import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.interview.service.RedisSessionService;
 import com.interviewmirror.interview.service.SessionService;
+import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,10 +27,9 @@ import org.springframework.web.bind.annotation.*;
 public class SessionController {
 
   private final SessionService sessionService;
+  private final InterviewPreparationService preparationService;
   private final RedisSessionService redisSessionService;
   private final S3Service s3Service;
-  private final AiGrpcClient aiGrpcClient;
-  private final SimpMessagingTemplate messagingTemplate;
 
   // 면접 세션 생성 및 초기화
   @PostMapping
@@ -45,13 +45,26 @@ public class SessionController {
         SessionCreateResponse.builder()
             .sessionId(generatedSessionId)
             .date(LocalDateTime.now().plusMinutes(30))
-            .sessionState("INIT")
+            .sessionState(InterviewSessionState.READY.name())
             .build();
 
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(responseDto));
   }
 
-  // 면접 세션 상태 변경 (START, PAUSE, RESUME, END)
+  // 면접 시작: 설정 저장, 세션 시작 전환, 초기 질문 생성 요청을 하나의 유스케이스로 처리
+  @PostMapping("/{sessionID}/start")
+  public ResponseEntity<ApiResponse<InterviewSettingResponse>> startInterview(
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @PathVariable("sessionID") Long sessionID,
+      @Valid @RequestBody InterviewSettingRequest request) {
+
+    Long userId = userDetails.getId();
+    InterviewSettingResponse response = preparationService.saveSetting(sessionID, userId, request);
+
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.success(response));
+  }
+
+  // 면접 세션 상태 변경 (PAUSED, IN_PROGRESS, ENDED)
   @PatchMapping("/{sessionID}/status")
   public ResponseEntity<ApiResponse<Map<String, String>>> updateSessionStatus(
       @AuthenticationPrincipal CustomUserDetails userDetails, // 1. 보안 토큰 파라미터 추가
@@ -61,6 +74,11 @@ public class SessionController {
     // 검증된 유저 ID 추출
     Long userId = userDetails.getId();
     String newStatus = request.getStatus();
+
+    if (InterviewSessionState.PREPARING.name().equalsIgnoreCase(newStatus)
+        || InterviewSessionState.READY.name().equalsIgnoreCase(newStatus)) {
+      throw new InterviewException(ErrorCode.VALIDATION_ERROR);
+    }
 
     // Service로 userId를 함께 전달
     sessionService.changeState(sessionID, userId, newStatus);
@@ -119,34 +137,5 @@ public class SessionController {
     sessionService.saveVideoUrl(sessionID, userId, contentUrl);
 
     return ResponseEntity.ok(ApiResponse.success(Map.of("Result", "SUCCESS")));
-  }
-
-  // 사용자 답변 제출 및 다음 AI 질문 생성 요청
-  @PostMapping("/{sessionID}/answer")
-  public ResponseEntity<ApiResponse<Void>> submitAnswer(
-      @PathVariable("sessionID") Long sessionID, @RequestBody AnswerSubmitRequest request) {
-
-    sessionService.processAnswerAndGenerateQuestion(
-        sessionID,
-        request.getAnswer(),
-        request.getEmotionResult(),
-        request.getResponseTimeSeconds());
-
-    return ResponseEntity.ok(ApiResponse.success(null));
-  }
-
-  // 실시간 감정 데이터 분석 요청 (gRPC & WebSocket)
-  @PostMapping("/{sessionID}/emotion")
-  public ResponseEntity<ApiResponse<EmotionDataResponse>> analyzeEmotion(
-      @PathVariable("sessionID") Long sessionID, @RequestBody EmotionDataRequest request) {
-
-    // 서비스 계층으로 핵심 로직 위임
-    String emotionResult = sessionService.processAndBroadcastEmotion(sessionID, request.getData());
-
-    // 응답 DTO 생성
-    EmotionDataResponse responseDto =
-        EmotionDataResponse.builder().message("전달완료").result(emotionResult).build();
-
-    return ResponseEntity.ok(ApiResponse.success(responseDto));
   }
 }

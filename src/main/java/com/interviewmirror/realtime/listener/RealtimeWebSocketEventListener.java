@@ -1,6 +1,6 @@
 package com.interviewmirror.realtime.listener;
 
-import com.interviewmirror.interview.service.SessionService;
+import com.interviewmirror.interview.service.SessionStateService;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +18,7 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 @RequiredArgsConstructor
 public class RealtimeWebSocketEventListener {
 
-  private final SessionService sessionService;
+  private final SessionStateService sessionStateService;
   private static final List<String> SESSION_TOPIC_PREFIXES =
       List.of("/topic/session/", "/topic/realtime/");
 
@@ -49,7 +49,7 @@ public class RealtimeWebSocketEventListener {
     // 2. 만약 장부에 기록된 세션이라면, 시스템 강제 일시정지 메서드를 실행합니다.
     if (appSessionId != null) {
       log.warn("[웹소켓 끊김] 연결 종료 감지. 시스템이 App Session [{}]을 일시정지 처리합니다.", appSessionId);
-      sessionService.autoPauseSession(appSessionId);
+      sessionStateService.autoPauseSession(appSessionId);
     }
   }
 

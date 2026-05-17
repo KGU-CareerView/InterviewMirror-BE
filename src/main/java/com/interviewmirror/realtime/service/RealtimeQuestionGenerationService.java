@@ -4,10 +4,9 @@ import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.grpc.proto.InitialQuestionGenerateResponse;
 import com.interviewmirror.grpc.proto.QuestionItem;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
-import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSessionState;
-import com.interviewmirror.interview.repository.InterviewResultRepository;
 import com.interviewmirror.interview.service.RedisSessionService;
+import com.interviewmirror.interview.service.SessionStateService;
 import com.interviewmirror.realtime.client.AiGrpcClient;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +21,8 @@ import org.springframework.stereotype.Service;
 public class RealtimeQuestionGenerationService {
 
   private final AiGrpcClient aiGrpcClient;
-  private final InterviewResultRepository resultRepository;
   private final RedisSessionService redisSessionService;
+  private final SessionStateService sessionStateService;
   private final RealtimeMessagePublisher realtimeMessagePublisher;
 
   @Async("aiTaskExecutor")
@@ -56,7 +55,7 @@ public class RealtimeQuestionGenerationService {
 
       String firstQuestion = questions.get(0).getQuestion();
       redisSessionService.setLastQuestion(sessionId, firstQuestion);
-      markSessionInProgress(sessionId);
+      sessionStateService.changeStateBySystem(sessionId, InterviewSessionState.IN_PROGRESS);
       realtimeMessagePublisher.publishInitialQuestionsReady(
           sessionId, firstQuestion, questions.stream().map(this::toPayload).toList());
     } catch (Exception e) {
@@ -86,16 +85,6 @@ public class RealtimeQuestionGenerationService {
     } finally {
       redisSessionService.unlockQuestionGeneration(sessionId);
     }
-  }
-
-  private void markSessionInProgress(Long sessionId) {
-    InterviewResult result =
-        resultRepository
-            .findById(sessionId)
-            .orElseThrow(() -> new IllegalStateException("Session not found: " + sessionId));
-    result.setSessionState(InterviewSessionState.IN_PROGRESS.name());
-    resultRepository.save(result);
-    redisSessionService.updateSessionState(sessionId, InterviewSessionState.IN_PROGRESS.name());
   }
 
   private Map<String, Object> toPayload(QuestionItem question) {

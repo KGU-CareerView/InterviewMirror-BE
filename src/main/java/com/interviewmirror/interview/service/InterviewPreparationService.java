@@ -4,7 +4,6 @@ import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.dto.InterviewSettingResponse;
 import com.interviewmirror.interview.entity.InterviewResult;
-import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
 import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
@@ -24,6 +23,7 @@ public class InterviewPreparationService {
   private final InterviewSettingRepository settingRepository;
   private final RealtimeQuestionGenerationService questionGenerationService;
   private final SessionService sessionService;
+  private final SessionStateService sessionStateService;
 
   @Transactional
   public InterviewSettingResponse saveSetting(
@@ -45,7 +45,7 @@ public class InterviewPreparationService {
     InterviewSetting savedSetting = settingRepository.save(setting);
     log.info("[SessionID: {}] 면접 사전 설정 완료. Setting ID: {}", sessionId, savedSetting.getSettingId());
 
-    sessionService.changeState(sessionId, userId, InterviewSessionState.PREPARING.name());
+    sessionStateService.markPreparing(sessionId, userId);
     runAfterCommit(
         () -> questionGenerationService.generateInitialQuestions(sessionId, userId, request));
 

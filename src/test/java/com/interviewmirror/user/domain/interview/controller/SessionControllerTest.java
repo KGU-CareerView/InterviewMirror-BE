@@ -11,11 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.interviewmirror.auth.jwt.JwtAuthenticationFilter;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.config.SecurityConfig;
 import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
@@ -26,19 +24,21 @@ import com.interviewmirror.interview.service.RedisSessionService;
 import com.interviewmirror.interview.service.SessionService;
 import com.interviewmirror.user.entity.User;
 import com.interviewmirror.user.repository.UserRepository;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(SessionController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@AutoConfigureMockMvc(addFilters = false)
 class SessionControllerTest {
 
   @Autowired private MockMvc mockMvc;
@@ -55,11 +55,41 @@ class SessionControllerTest {
   @MockitoBean private JwtTokenProvider jwtTokenProvider;
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private AuthService authService;
+  @MockitoBean private CustomUserDetails customUserDetails;
 
   private static final String BASE_URL = "/v1/sessions";
   private CustomUserDetails testUserDetails;
   private final Long USER_ID = 1L;
   private final Long SESSION_ID = 100L;
+
+  @TestConfiguration
+  static class SecurityTestConfig
+      implements org.springframework.web.servlet.config.annotation.WebMvcConfigurer {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private CustomUserDetails customUserDetails;
+
+    @Override
+    public void addArgumentResolvers(
+        List<org.springframework.web.method.support.HandlerMethodArgumentResolver> resolvers) {
+      resolvers.add(
+          new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(org.springframework.core.MethodParameter parameter) {
+              return parameter.getParameterType().isAssignableFrom(CustomUserDetails.class);
+            }
+
+            @Override
+            public Object resolveArgument(
+                org.springframework.core.MethodParameter parameter,
+                org.springframework.web.method.support.ModelAndViewContainer mavContainer,
+                org.springframework.web.context.request.NativeWebRequest webRequest,
+                org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
+              return customUserDetails;
+            }
+          });
+    }
+  }
 
   @BeforeEach
   void setUp() {
@@ -68,6 +98,7 @@ class SessionControllerTest {
     testUser.setId(USER_ID);
     testUser.setEmail("test@example.com");
     testUserDetails = new CustomUserDetails(testUser);
+    given(customUserDetails.getId()).willReturn(USER_ID);
   }
 
   @Test

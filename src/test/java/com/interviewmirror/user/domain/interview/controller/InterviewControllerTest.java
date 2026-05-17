@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.config.SecurityConfig;
 import com.interviewmirror.infrastructure.AiGrpcClient;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
@@ -29,22 +28,16 @@ import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(
-    controllers = InterviewController.class,
-    excludeAutoConfiguration = {SecurityAutoConfiguration.class},
-    excludeFilters = {
-      @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class)
-    })
+@WebMvcTest(controllers = InterviewController.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class InterviewControllerTest {
 
   @Autowired private MockMvc mockMvc;
@@ -97,6 +90,7 @@ public class InterviewControllerTest {
     // given
     Long sessionId = 1L;
     Long userId = 1L;
+    given(customUserDetails.getId()).willReturn(userId);
 
     InterviewResultResponse mockResponse =
         InterviewResultResponse.builder()
@@ -152,6 +146,7 @@ public class InterviewControllerTest {
     // given
     Long sessionId = 1L;
     Long mockUserId = 1L; // 가짜 유저(userDetails)의 ID
+    given(customUserDetails.getId()).willReturn(mockUserId);
 
     InterviewReportResponse mockResponse =
         InterviewReportResponse.builder()

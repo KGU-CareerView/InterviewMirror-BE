@@ -46,6 +46,18 @@ logging:
     com.interviewmirror: DEBUG
     org.hibernate.SQL: DEBUG
 
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:dummy}   # 환경변수에서 로드
+      secret-key: ${AWS_SECRET_KEY:dummy}   # 환경변수에서 로드
+    region:
+      static: ap-northeast-2          # 서울 리전 (보통 고정해서 사용)
+    s3:
+      bucket: ${S3_BUCKET_NAME:dummy_name}       # 사용할 S3 버킷 이름
+    stack:
+      auto: false                     # 로컬/일반 서버 실행 시 EC2 메타데이터 체크 방지
+      
 jwt:
   secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key-123456789}
   access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:3600000}

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verify;
 import com.interviewmirror.interview.dto.InterviewSettingDetailResponse;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.entity.InterviewResult;
-import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.entity.InterviewSetting;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
 import com.interviewmirror.realtime.service.RealtimeQuestionGenerationService;
@@ -31,6 +30,8 @@ class InterviewPreparationServiceTest {
   @Mock private RealtimeQuestionGenerationService questionGenerationService;
 
   @Mock private SessionService sessionService; // 공통 검증 로직을 위한 세션 서비스 모킹
+
+  @Mock private SessionStateService sessionStateService;
 
   @InjectMocks private InterviewPreparationService preparationService;
 
@@ -58,8 +59,7 @@ class InterviewPreparationServiceTest {
 
     // then
     verify(sessionService, times(1)).getValidatedSession(SESSION_ID, USER_ID);
-    verify(sessionService, times(1))
-        .changeState(SESSION_ID, USER_ID, InterviewSessionState.PREPARING.name());
+    verify(sessionStateService, times(1)).markPreparing(SESSION_ID, USER_ID);
     ArgumentCaptor<InterviewSetting> settingCaptor =
         ArgumentCaptor.forClass(InterviewSetting.class);
     verify(settingRepository, times(1)).save(settingCaptor.capture());

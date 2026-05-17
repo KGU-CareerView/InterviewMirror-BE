@@ -15,14 +15,16 @@ import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
 import com.interviewmirror.infrastructure.RabbitMQProducer;
-import com.interviewmirror.infrastructure.S3Service;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.dto.InterviewSettingResponse;
+import com.interviewmirror.interview.dto.MediaSaveRequest;
+import com.interviewmirror.interview.dto.SessionCreateResponse;
+import com.interviewmirror.interview.dto.SessionStateResponse;
 import com.interviewmirror.interview.entity.InterviewSessionState;
 import com.interviewmirror.interview.service.InterviewPreparationService;
 import com.interviewmirror.interview.service.InterviewService;
-import com.interviewmirror.interview.service.RedisSessionService;
 import com.interviewmirror.interview.service.SessionService;
+import com.interviewmirror.interview.service.SessionStateService;
 import com.interviewmirror.user.entity.User;
 import com.interviewmirror.user.repository.UserRepository;
 import java.util.List;
@@ -45,8 +47,7 @@ class SessionControllerTest {
   @Autowired private ObjectMapper objectMapper;
 
   @MockitoBean private SessionService sessionService;
-  @MockitoBean private RedisSessionService redisSessionService;
-  @MockitoBean private S3Service s3Service;
+  @MockitoBean private SessionStateService sessionStateService;
   @MockitoBean private InterviewService interviewService;
   @MockitoBean private InterviewPreparationService interviewPreparationService;
   @MockitoBean private RabbitMQProducer rabbitMQProducer;
@@ -102,7 +103,12 @@ class SessionControllerTest {
   @Test
   @DisplayName("세션 생성 API [POST] - 성공 시 201 반환")
   void createSessionApiTest() throws Exception {
-    given(sessionService.createSession(USER_ID)).willReturn(SESSION_ID);
+    given(sessionService.createSession(USER_ID))
+        .willReturn(
+            SessionCreateResponse.builder()
+                .sessionId(SESSION_ID)
+                .sessionState(InterviewSessionState.READY.name())
+                .build());
 
     mockMvc
         .perform(
@@ -154,15 +160,18 @@ class SessionControllerTest {
         .andExpect(jsonPath("$.data.Result").value("SUCCESS"))
         .andDo(print());
 
-    verify(sessionService)
+    verify(sessionStateService)
         .changeState(eq(SESSION_ID), eq(USER_ID), eq(InterviewSessionState.PAUSED.name()));
   }
 
   @Test
   @DisplayName("세션 상태 조회 API [GET] - 성공 시 200 반환")
   void getSessionStateApiTest() throws Exception {
-    given(redisSessionService.getSessionState(SESSION_ID))
-        .willReturn(InterviewSessionState.IN_PROGRESS.name());
+    given(sessionStateService.getSessionState(SESSION_ID))
+        .willReturn(
+            SessionStateResponse.builder()
+                .sessionState(InterviewSessionState.IN_PROGRESS.name())
+                .build());
 
     mockMvc
         .perform(get(BASE_URL + "/{sessionID}", SESSION_ID).with(user(testUserDetails)))
@@ -188,6 +197,6 @@ class SessionControllerTest {
         .andExpect(jsonPath("$.data.Result").value("SUCCESS"))
         .andDo(print());
 
-    verify(sessionService).saveVideoUrl(eq(SESSION_ID), eq(USER_ID), eq(videoUrl));
+    verify(sessionService).saveMediaUrl(eq(SESSION_ID), eq(USER_ID), any(MediaSaveRequest.class));
   }
 }

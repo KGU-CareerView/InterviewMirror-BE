@@ -10,12 +10,10 @@ import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.grpc.proto.InitialQuestionGenerateResponse;
 import com.interviewmirror.grpc.proto.QuestionItem;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
-import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSessionState;
-import com.interviewmirror.interview.repository.InterviewResultRepository;
 import com.interviewmirror.interview.service.RedisSessionService;
+import com.interviewmirror.interview.service.SessionStateService;
 import com.interviewmirror.realtime.client.AiGrpcClient;
-import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,9 +26,9 @@ class RealtimeQuestionGenerationServiceTest {
 
   @Mock private AiGrpcClient aiGrpcClient;
 
-  @Mock private InterviewResultRepository resultRepository;
-
   @Mock private RedisSessionService redisSessionService;
+
+  @Mock private SessionStateService sessionStateService;
 
   @Mock private RealtimeMessagePublisher realtimeMessagePublisher;
 
@@ -53,15 +51,10 @@ class RealtimeQuestionGenerationServiceTest {
     when(aiGrpcClient.requestInitialQuestions(
             sessionId, userId, "BACKEND", "TECH", "NORMAL", 3, 30, "resume"))
         .thenReturn(response);
-    InterviewResult result = InterviewResult.builder().sessionId(sessionId).build();
-    when(resultRepository.findById(sessionId)).thenReturn(Optional.of(result));
-
     questionGenerationService.generateInitialQuestions(sessionId, userId, request);
 
     verify(redisSessionService).setLastQuestion(sessionId, "첫 질문");
-    verify(resultRepository).save(result);
-    verify(redisSessionService)
-        .updateSessionState(sessionId, InterviewSessionState.IN_PROGRESS.name());
+    verify(sessionStateService).changeStateBySystem(sessionId, InterviewSessionState.IN_PROGRESS);
     verify(realtimeMessagePublisher)
         .publishInitialQuestionsReady(eq(sessionId), eq("첫 질문"), anyList());
     verify(redisSessionService).unlockQuestionGeneration(sessionId);
@@ -80,7 +73,7 @@ class RealtimeQuestionGenerationServiceTest {
 
     verify(realtimeMessagePublisher).publishQuestionProcessingWarning(sessionId);
     verifyNoInteractions(aiGrpcClient);
-    verifyNoInteractions(resultRepository);
+    verifyNoInteractions(sessionStateService);
   }
 
   @Test

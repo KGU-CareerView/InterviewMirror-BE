@@ -2,7 +2,6 @@ package com.interviewmirror.realtime.controller;
 
 import static org.mockito.Mockito.verify;
 
-import com.interviewmirror.interview.service.SessionService;
 import com.interviewmirror.realtime.dto.RealtimeAnswerRequest;
 import com.interviewmirror.realtime.service.RealtimeService;
 import org.junit.jupiter.api.DisplayName;
@@ -18,13 +17,11 @@ class RealtimeWebSocketControllerTest {
 
   @Mock private RealtimeService realtimeService;
 
-  @Mock private SessionService sessionService;
-
   @InjectMocks private RealtimeWebSocketController controller;
 
   @Test
-  @DisplayName("WebSocket 답변 제출 시 SessionService에 답변 처리를 위임한다.")
-  void submitAnswer_DelegatesToSessionService() {
+  @DisplayName("WebSocket 답변 제출 시 RealtimeService에 답변 이벤트 처리를 위임한다.")
+  void submitAnswer_DelegatesToRealtimeService() {
     RealtimeAnswerRequest request = new RealtimeAnswerRequest();
     ReflectionTestUtils.setField(request, "sessionId", 1L);
     ReflectionTestUtils.setField(request, "answer", "제 답변입니다.");
@@ -33,6 +30,6 @@ class RealtimeWebSocketControllerTest {
 
     controller.submitAnswer(request);
 
-    verify(sessionService).processAnswerAndGenerateQuestion(1L, "제 답변입니다.", "HAPPY", 15);
+    verify(realtimeService).submitAnswer(request);
   }
 }

@@ -38,6 +38,7 @@ public class SecurityConfig {
                         "/h2-console/**",
                         "/actuator/health",
                         "/error",
+                        "/oauth-test.html",
                         "/oauth2/**",
                         "/login/oauth2/**",
                         "/v1/auth/signup",

@@ -47,6 +47,18 @@ spring:
               - email
               - profile
 
+grpc:
+  client:
+    ai-server:
+      address: 'static://${AI_SERVER_HOST:localhost}:${AI_SERVER_PORT:50051}'
+      negotiation-type: ${GRPC_NEGOTIATION_TYPE:plaintext}
+
+feedback:
+  buffer:
+    ttl: PT2H
+    flush-interval-ms: 2000
+    max-size-per-session: 1000
+
 logging:
   level:
     root: INFO

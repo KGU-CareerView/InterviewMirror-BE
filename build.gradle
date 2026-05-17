@@ -3,10 +3,15 @@ plugins {
     id 'org.springframework.boot' version '3.5.8'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '8.4.0'
+    id 'com.google.protobuf' version '0.9.4'
 }
 
 group = 'com.interviewmirror'
 version = '1.0.0'
+
+ext {
+    grpcVersion = '1.63.0'
+}
 
 java {  
     toolchain {  
@@ -20,6 +25,7 @@ repositories {
 
 spotless {
     java {
+        target 'src/main/java/**/*.java', 'src/test/java/**/*.java'
         googleJavaFormat()
         importOrder()
         removeUnusedImports()
@@ -50,6 +56,12 @@ dependencies {
     // SpringDoc OpenAPI (Swagger)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
 
+    // gRPC
+    implementation 'net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE'
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'com.h2database:h2'
@@ -65,6 +77,22 @@ dependencies {
     // S3
     implementation 'software.amazon.awssdk:s3:2.20.0'
 
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.25.5'
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
 }
 
 tasks.named('test') {

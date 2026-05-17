@@ -1,4 +1,4 @@
-package com.interviewmirror.user.domain.interview.service;
+package com.interviewmirror.interview.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

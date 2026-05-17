@@ -1,4 +1,4 @@
-package com.interviewmirror.user.domain.interview.controller;
+package com.interviewmirror.interview.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;

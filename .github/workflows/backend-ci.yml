@@ -44,7 +44,7 @@ jobs:
           cat > .env <<'EOF'
           SERVER_PORT=8080
           SPRING_PROFILES_ACTIVE=dev
-          MYSQL_DATABASE=interview_db
+          MYSQL_DATABASE=interview_mirror
           MYSQL_HOST=mysql
           MYSQL_PORT=3306
           MYSQL_ROOT_PASSWORD=interview_ci_password

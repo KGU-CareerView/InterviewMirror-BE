@@ -176,7 +176,7 @@ nano .env
 **.env 파일 예:**
 ```env
 SERVER_PORT=8080
-MYSQL_DATABASE=interview_db
+MYSQL_DATABASE=interview_mirror
 MYSQL_HOST=mysql
 MYSQL_PORT=3306
 # MYSQL_USER=root
@@ -283,7 +283,7 @@ make clean && make up
 | 환경변수 | 기본값 | 설명 |
 |---------|--------|------|
 | `SERVER_PORT` | 8080 | 백엔드 서버 포트 |
-| `MYSQL_DATABASE` | interview_db | 데이터베이스 이름 |
+| `MYSQL_DATABASE` | interview_mirror | 데이터베이스 이름 |
 | `MYSQL_HOST` | mysql | MySQL 호스트명 |
 | `MYSQL_PORT` | 3306 | MySQL 포트 |
 | `MYSQL_ROOT_PASSWORD` | - | DB 암호 |
@@ -295,7 +295,7 @@ make clean && make up
 
 ```bash
 # MySQL 접속
-docker-compose exec mysql mysql -uroot interview_db
+docker-compose exec mysql mysql -uroot interview_mirror
 
 # Redis 접속
 docker-compose exec redis redis-cli

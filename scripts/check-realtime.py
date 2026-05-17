@@ -102,7 +102,7 @@ def read_http_response(sock):
     return data.decode("iso-8859-1", errors="replace")
 
 
-def open_websocket(url, timeout):
+def open_websocket(url, token, timeout):
     parsed = urlparse(url)
     if parsed.scheme != "ws":
         raise ValueError("this script supports ws:// only; use a non-TLS local backend URL")
@@ -116,6 +116,7 @@ def open_websocket(url, timeout):
     sock = socket.create_connection((host, port), timeout=timeout)
     sock.settimeout(timeout)
     key = base64.b64encode(os.urandom(16)).decode("ascii")
+    auth_line = f"Authorization: Bearer {token}\r\n" if token else ""
     request = (
         f"GET {path} HTTP/1.1\r\n"
         f"Host: {parsed.netloc}\r\n"
@@ -124,6 +125,7 @@ def open_websocket(url, timeout):
         f"Sec-WebSocket-Key: {key}\r\n"
         "Sec-WebSocket-Version: 13\r\n"
         "Origin: http://localhost\r\n"
+        f"{auth_line}"
         "\r\n"
     )
     sock.sendall(request.encode("ascii"))
@@ -162,14 +164,14 @@ def parse_stomp_body(frame):
 
 
 def run_websocket_check(args):
-    endpoint = args.backend_url.rstrip("/") + "/ws/feedback"
+    endpoint = args.backend_url.rstrip("/") + "/ws-interview"
     url = websocket_url(endpoint)
     log(f"WebSocket: connecting to {url}")
 
     session_id = args.session_id or f"check-{uuid.uuid4().hex[:8]}"
     deadline = time.time() + args.timeout
 
-    with open_websocket(url, args.timeout) as sock:
+    with open_websocket(url, args.token, args.timeout) as sock:
         saw_open = False
         for raw in iter(lambda: recv_ws_frame(sock), None):
             if raw == "o":
@@ -194,12 +196,13 @@ def run_websocket_check(args):
         log("WebSocket: STOMP connected")
 
         subscriptions = [
-            ("sub-feedback", f"/topic/feedback/{session_id}"),
-            ("sub-errors", f"/topic/feedback/{session_id}/errors"),
+            ("sub-realtime", f"/topic/realtime/{session_id}"),
+            ("sub-errors", f"/topic/realtime/{session_id}/errors"),
         ]
         for sub_id, destination in subscriptions:
             frame = f"SUBSCRIBE\nid:{sub_id}\ndestination:{destination}\nack:auto\n\n\x00"
             sockjs_send_stomp(sock, frame)
+            log(f"WebSocket: subscribed {destination}")
 
         body = {
             "sessionId": session_id,
@@ -218,13 +221,13 @@ def run_websocket_check(args):
         body_text = json.dumps(body, separators=(",", ":"))
         send_frame = (
             "SEND\n"
-            "destination:/app/feedback.frames\n"
+            "destination:/app/realtime.frames\n"
             "content-type:application/json\n"
             f"content-length:{len(body_text.encode('utf-8'))}\n\n"
             f"{body_text}\x00"
         )
         sockjs_send_stomp(sock, send_frame)
-        log(f"WebSocket: sent feedback frame for session {session_id}")
+        log(f"WebSocket: sent realtime frame for session {session_id}")
 
         for frame in read_stomp_frames(sock, deadline):
             if frame.startswith("ERROR"):
@@ -233,13 +236,13 @@ def run_websocket_check(args):
                 continue
 
             body_text = parse_stomp_body(frame)
-            if f"/topic/feedback/{session_id}/errors" in frame:
+            if f"/topic/realtime/{session_id}/errors" in frame:
                 raise RuntimeError(f"backend reported stream error: {body_text}")
-            if f"/topic/feedback/{session_id}" in frame:
-                log(f"WebSocket: received feedback message: {body_text}")
+            if f"/topic/realtime/{session_id}" in frame:
+                log(f"WebSocket: received realtime message: {body_text}")
                 return True
 
-        raise TimeoutError("feedback message was not received before timeout")
+        raise TimeoutError("realtime message was not received before timeout")
 
 
 def run_grpc_check(args):
@@ -271,7 +274,7 @@ def run_grpc_check(args):
         "-import-path",
         str(proto_dir),
         "-proto",
-        "emotion_analysis.proto",
+        "interview.proto",
         "-d",
         json.dumps(payload),
         target,
@@ -304,6 +307,7 @@ def normalize_grpc_target(target, force_tls):
 def main():
     parser = argparse.ArgumentParser(description="Check InterviewMirror WebSocket and gRPC realtime paths.")
     parser.add_argument("--backend-url", default="http://localhost:8080/api")
+    parser.add_argument("--token", default=os.getenv("ACCESS_TOKEN") or os.getenv("JWT_TOKEN"))
     parser.add_argument("--ai-target", default="localhost:50051")
     parser.add_argument("--grpc-tls", action="store_true")
     parser.add_argument("--session-id")

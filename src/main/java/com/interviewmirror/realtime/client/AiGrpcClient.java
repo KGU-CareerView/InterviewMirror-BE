@@ -49,7 +49,23 @@ public class AiGrpcClient {
             .setLanguage("ko")
             .build();
 
-    return blockingStub.generateInitialQuestions(request);
+    log.info(
+        "AI gRPC request: method=GenerateInitialQuestions sessionId={} userId={} category={} interviewType={} difficulty={} questionCount={} timePerQuestion={} resumeLength={}",
+        request.getSessionId(),
+        request.getUserId(),
+        request.getCategory(),
+        request.getInterviewType(),
+        request.getDifficulty(),
+        request.getQuestionCount(),
+        request.getTimePerQuestion(),
+        request.getResumeText().length());
+    InitialQuestionGenerateResponse response = blockingStub.generateInitialQuestions(request);
+    log.info(
+        "AI gRPC response: method=GenerateInitialQuestions sessionId={} userId={} questionCount={}",
+        response.getSessionId(),
+        response.getUserId(),
+        response.getQuestionsCount());
+    return response;
   }
 
   public String generateFollowUpQuestion(Long sessionId, String previousQuestion, String answer) {
@@ -61,11 +77,29 @@ public class AiGrpcClient {
             .setLanguage("ko")
             .build();
 
+    log.info(
+        "AI gRPC request: method=GenerateFollowUpQuestion sessionId={} previousQuestionLength={} answerLength={}",
+        request.getSessionId(),
+        request.getPreviousQuestion().length(),
+        request.getAnswer().length());
     FollowUpQuestionGenerateResponse response = blockingStub.generateFollowUpQuestion(request);
-    return response.getQuestion().getQuestion();
+    String question = response.getQuestion().getQuestion();
+    log.info(
+        "AI gRPC response: method=GenerateFollowUpQuestion sessionId={} userId={} questionPreview={}",
+        response.getSessionId(),
+        response.getUserId(),
+        preview(question));
+    return question;
   }
 
   private String valueOrEmpty(String value) {
     return value == null ? "" : value;
+  }
+
+  private String preview(String value) {
+    if (value == null || value.isBlank()) {
+      return "";
+    }
+    return value.length() <= 80 ? value : value.substring(0, 80) + "...";
   }
 }

@@ -1,6 +1,10 @@
 package com.interviewmirror.config;
 
 import org.springframework.context.annotation.Bean;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -22,9 +26,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     return container;
   }
 
+
+  @Value("${cors.allowed-origins:}")
+  private String allowedOrigins;
+
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/ws-interview").setAllowedOriginPatterns("*").withSockJS();
+    registry
+        .addEndpoint("/ws-interview")
+        .setAllowedOriginPatterns(getAllowedOrigins())
+        .withSockJS();
   }
 
   @Override
@@ -37,5 +48,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
     registry.setMessageSizeLimit(MESSAGE_SIZE_LIMIT_BYTES);
     registry.setSendBufferSizeLimit(MESSAGE_SIZE_LIMIT_BYTES);
+  }
+
+  private String[] getAllowedOrigins() {
+    List<String> origins = new ArrayList<>();
+    if (!allowedOrigins.isBlank()) {
+      origins.addAll(
+          Arrays.stream(allowedOrigins.split(","))
+              .map(String::trim)
+              .filter(origin -> !origin.isBlank())
+              .toList());
+    }
+    origins.add("http://localhost:5173");
+    origins.add("http://localhost:5174");
+    return origins.toArray(String[]::new);
   }
 }

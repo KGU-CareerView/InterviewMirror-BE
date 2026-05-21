@@ -28,7 +28,7 @@ def build_url(base_url, path):
 
 
 def auth_headers(token):
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "ngrok-skip-browser-warning": "true"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
@@ -131,7 +131,7 @@ def read_http_response(sock):
     return data.decode("iso-8859-1", errors="replace")
 
 
-def open_websocket(url, token, timeout):
+def open_websocket(url, token, timeout, origin):
     parsed = urlparse(url)
     if parsed.scheme not in ("ws", "wss"):
         raise ValueError("websocket URL must start with ws:// or wss://")
@@ -158,7 +158,8 @@ def open_websocket(url, token, timeout):
         "Connection: Upgrade\r\n"
         f"Sec-WebSocket-Key: {key}\r\n"
         "Sec-WebSocket-Version: 13\r\n"
-        "Origin: http://localhost\r\n"
+        f"Origin: {origin}\r\n"
+        "ngrok-skip-browser-warning: true\r\n"
         f"{auth_line}"
         "\r\n"
     )
@@ -202,7 +203,7 @@ def connect_and_subscribe(args, session_id):
     log(f"WebSocket: connecting to {url}")
     deadline = time.time() + args.timeout
 
-    sock = open_websocket(url, args.token, args.timeout)
+    sock = open_websocket(url, args.token, args.timeout, args.origin)
     saw_open = False
     for raw in iter(lambda: recv_ws_frame(sock), None):
         if raw == "o":
@@ -340,6 +341,7 @@ def main():
         description="Check session start flow: HTTP start request and WebSocket question-ready signal."
     )
     parser.add_argument("--backend-url", default="http://localhost:8080/api")
+    parser.add_argument("--origin", default="http://localhost:5174")
     parser.add_argument("--token", default=os.getenv("ACCESS_TOKEN") or os.getenv("JWT_TOKEN"))
     parser.add_argument("--session-id", type=int)
     parser.add_argument("--timeout", type=int, default=60)

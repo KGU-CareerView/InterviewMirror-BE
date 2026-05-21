@@ -89,3 +89,6 @@ jwt:
 oauth:
   success-redirect-url: ${OAUTH_SUCCESS_REDIRECT_URL}
   code-expiration-ms: ${OAUTH_CODE_EXPIRATION_MS}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}

@@ -22,5 +22,4 @@ public enum InterviewSessionState {
       throw new InterviewException(ErrorCode.VALIDATION_ERROR);
     }
   }
-
 }

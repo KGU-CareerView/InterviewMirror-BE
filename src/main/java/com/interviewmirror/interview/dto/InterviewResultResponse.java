@@ -30,8 +30,20 @@ public class InterviewResultResponse {
   public static class DetailDto {
     private Long qId;
     private String question;
-    private String answer;
+    private String answer; // STT 변환된 답변 (대본)
     private String emotionResult;
     private Integer responseTimeSeconds;
+
+    // 질문별 점수
+    private Integer totalScore;
+    private Integer contentScore;
+    private Integer voiceScore;
+    private Integer expressionScore;
+
+    // 질문별 피드백
+    private String feedback;
+    private String contentFeedback;
+    private String voiceFeedback;
+    private String expressionFeedback;
   }
 }

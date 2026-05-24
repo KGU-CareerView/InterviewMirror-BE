@@ -2,11 +2,15 @@ package com.interviewmirror.realtime.client;
 
 import com.interviewmirror.grpc.proto.AnalysisResponse;
 import com.interviewmirror.grpc.proto.FeatureRequest;
+import com.interviewmirror.grpc.proto.FinalReportRequest;
+import com.interviewmirror.grpc.proto.FinalReportResponse;
 import com.interviewmirror.grpc.proto.FollowUpQuestionGenerateRequest;
 import com.interviewmirror.grpc.proto.FollowUpQuestionGenerateResponse;
 import com.interviewmirror.grpc.proto.InitialQuestionGenerateRequest;
 import com.interviewmirror.grpc.proto.InitialQuestionGenerateResponse;
 import com.interviewmirror.grpc.proto.InterviewAIServiceGrpc;
+import com.interviewmirror.grpc.proto.VoiceToneAnalysisRequest;
+import com.interviewmirror.grpc.proto.VoiceToneAnalysisResponse;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
@@ -90,6 +94,65 @@ public class AiGrpcClient {
         response.getUserId(),
         preview(question));
     return question;
+  }
+
+  public void generateFinalReportAsync(
+      FinalReportRequest request, StreamObserver<FinalReportResponse> observer) {
+    log.info(
+        "AI gRPC request: method=GenerateFinalReport sessionId={} questionCount={}",
+        request.getSessionId(),
+        request.getQuestionResultsCount());
+    asyncStub.generateFinalReport(request, observer);
+  }
+
+  public VoiceToneAnalysisResponse analyzeVoiceTone(VoiceToneAnalysisRequest request) {
+    log.info(
+        "AI gRPC request: method=AnalyzeVoiceTone sessionId={} questionIndex={} zcrSampleCount={}",
+        request.getSessionId(),
+        request.getQuestionIndex(),
+        request.getZcrSamplesCount());
+    VoiceToneAnalysisResponse response = blockingStub.analyzeVoiceTone(request);
+    log.info(
+        "AI gRPC response: method=AnalyzeVoiceTone sessionId={} overallScore={}",
+        response.getSessionId(),
+        response.getOverallStabilityScore());
+    return response;
+  }
+
+  public java.util.concurrent.CompletableFuture<VoiceToneAnalysisResponse> analyzeVoiceToneAsync(
+      VoiceToneAnalysisRequest request) {
+    log.info(
+        "AI gRPC request: method=AnalyzeVoiceTone(async) sessionId={} questionIndex={} zcrSampleCount={}",
+        request.getSessionId(),
+        request.getQuestionIndex(),
+        request.getZcrSamplesCount());
+    java.util.concurrent.CompletableFuture<VoiceToneAnalysisResponse> future =
+        new java.util.concurrent.CompletableFuture<>();
+    asyncStub.analyzeVoiceTone(
+        request,
+        new io.grpc.stub.StreamObserver<VoiceToneAnalysisResponse>() {
+          @Override
+          public void onNext(VoiceToneAnalysisResponse response) {
+            log.info(
+                "AI gRPC response: method=AnalyzeVoiceTone(async) sessionId={} overallScore={}",
+                response.getSessionId(),
+                response.getOverallStabilityScore());
+            future.complete(response);
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            log.warn(
+                "AI gRPC error: method=AnalyzeVoiceTone(async) sessionId={} error={}",
+                request.getSessionId(),
+                t.getMessage());
+            future.completeExceptionally(t);
+          }
+
+          @Override
+          public void onCompleted() {}
+        });
+    return future;
   }
 
   private String valueOrEmpty(String value) {

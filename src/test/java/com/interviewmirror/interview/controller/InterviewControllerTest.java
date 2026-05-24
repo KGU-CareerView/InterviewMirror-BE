@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.infrastructure.S3Service;
 import com.interviewmirror.interview.dto.InterviewReportResponse;
 import com.interviewmirror.interview.dto.InterviewResultResponse;
@@ -46,7 +45,6 @@ public class InterviewControllerTest {
   @MockitoBean private RedisSessionService redisSessionService;
   @MockitoBean private S3Service s3Service;
   @MockitoBean private AiGrpcClient aiGrpcClient;
-  @MockitoBean private RabbitMQProducer rabbitMQProducer;
   @MockitoBean private JwtTokenProvider jwtTokenProvider;
   @MockitoBean private CustomUserDetails customUserDetails;
   @MockitoBean private UserRepository userRepository;

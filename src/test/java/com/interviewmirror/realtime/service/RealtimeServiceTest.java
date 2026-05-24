@@ -40,11 +40,11 @@ class RealtimeServiceTest {
     ReflectionTestUtils.setField(request, "emotionResult", "HAPPY");
     ReflectionTestUtils.setField(request, "responseTimeSeconds", 15);
 
-    when(sessionService.recordAnswer(1L, "제 답변입니다.", "HAPPY", 15)).thenReturn("이전 질문입니다.");
+    when(sessionService.recordAnswer(1L, "제 답변입니다.", "HAPPY", 15, null)).thenReturn("이전 질문입니다.");
 
     realtimeService.submitAnswer(request);
 
-    verify(sessionService).recordAnswer(1L, "제 답변입니다.", "HAPPY", 15);
+    verify(sessionService).recordAnswer(1L, "제 답변입니다.", "HAPPY", 15, null);
     verify(questionGenerationService).generateFollowUpQuestion(1L, "이전 질문입니다.", "제 답변입니다.");
   }
 }

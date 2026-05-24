@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.auth.jwt.JwtTokenProvider;
 import com.interviewmirror.auth.security.CustomUserDetails;
 import com.interviewmirror.auth.service.AuthService;
-import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.interview.dto.InterviewSettingRequest;
 import com.interviewmirror.interview.dto.InterviewSettingResponse;
 import com.interviewmirror.interview.dto.MediaSaveRequest;
@@ -50,7 +49,6 @@ class SessionControllerTest {
   @MockitoBean private SessionStateService sessionStateService;
   @MockitoBean private InterviewService interviewService;
   @MockitoBean private InterviewPreparationService interviewPreparationService;
-  @MockitoBean private RabbitMQProducer rabbitMQProducer;
   @MockitoBean private JwtTokenProvider jwtTokenProvider;
   @MockitoBean private UserRepository userRepository;
   @MockitoBean private AuthService authService;

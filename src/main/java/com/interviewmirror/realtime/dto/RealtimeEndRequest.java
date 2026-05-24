@@ -14,4 +14,6 @@ public class RealtimeEndRequest {
 
   @NotBlank(message = "sessionId cannot be blank")
   private String sessionId;
+
+  private Boolean includesAudio;
 }

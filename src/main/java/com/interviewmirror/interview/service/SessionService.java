@@ -1,6 +1,5 @@
 package com.interviewmirror.interview.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.exception.InterviewException;
 import com.interviewmirror.infrastructure.S3Service;
@@ -8,12 +7,13 @@ import com.interviewmirror.interview.dto.MediaSaveRequest;
 import com.interviewmirror.interview.dto.PresignedUrlRequest;
 import com.interviewmirror.interview.dto.PresignedUrlResponse;
 import com.interviewmirror.interview.dto.SessionCreateResponse;
+import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSessionState;
+import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
+import com.interviewmirror.realtime.dto.AudioSummaryDto;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,10 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SessionService {
   private final InterviewResultRepository resultRepository;
+  private final InterviewDetailRepository detailRepository;
   private final RedisSessionService redisSessionService;
-
+  private final AudioScoreService audioScoreService;
   private final S3Service s3Service;
-  private final ObjectMapper objectMapper; // JSON 직렬화용
 
   @Transactional
   public SessionCreateResponse createSession(Long userId) {
@@ -48,25 +48,32 @@ public class SessionService {
         .build();
   }
 
+  @Transactional
   public String recordAnswer(
-      Long sessionId, String answer, String emotionResult, Integer responseTimeSeconds) {
+      Long sessionId,
+      String answer,
+      String emotionResult,
+      Integer responseTimeSeconds,
+      AudioSummaryDto audioSummary) {
     String question = redisSessionService.getLastQuestion(sessionId);
     String safeQuestion = (question != null) ? question : "";
 
-    try {
-      Map<String, Object> qaData = new HashMap<>();
-      qaData.put("quizID", System.currentTimeMillis());
-      qaData.put("question", safeQuestion);
-      qaData.put("answer", answer);
-      qaData.put("emotionResult", emotionResult);
-      qaData.put("responseTimeSeconds", responseTimeSeconds);
+    InterviewResult result =
+        resultRepository
+            .findById(sessionId)
+            .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_NOT_FOUND));
 
-      String qaJson = objectMapper.writeValueAsString(qaData);
-      redisSessionService.addQaToRedis(sessionId, qaJson);
-    } catch (Exception e) {
-      log.error("Redis 문답 JSON 직렬화 실패: {}", e.getMessage());
-      throw new InterviewException(ErrorCode.SERVER_INTERNAL_ERROR);
-    }
+    detailRepository.save(
+        InterviewDetail.builder()
+            .interviewResult(result)
+            .qId(System.currentTimeMillis())
+            .question(safeQuestion)
+            .answer(answer)
+            .emotionResult(emotionResult)
+            .responseTimeSeconds(responseTimeSeconds)
+            .audioSummaryJson(audioScoreService.serializeSummary(audioSummary))
+            .audioScore(audioScoreService.calculateQuestionScore(audioSummary))
+            .build());
 
     return safeQuestion;
   }
@@ -90,19 +97,13 @@ public class SessionService {
     result.setVideoUrl(request.getContentUrl());
   }
 
-  /**
-   * [공통 검증 로직] 세션 ID로 DB에서 세션을 찾고, 요청한 유저의 소유가 맞는지 검증합니다. 검증에 성공하면 InterviewResult 객체를 반환하고, 실패하면
-   * 예외를 던집니다.
-   */
   @Transactional(readOnly = true)
   public InterviewResult getValidatedSession(Long sessionId, Long userId) {
-    // 1. 세션 존재 여부 확인
     InterviewResult result =
         resultRepository
             .findById(sessionId)
             .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_NOT_FOUND));
 
-    // 2. 소유권 검증 (IDOR 방어)
     if (!result.getUserId().equals(userId)) {
       log.warn("[보안 경고] 타인 세션 접근 시도 - SessionId: {}, UserId: {}", sessionId, userId);
       throw new InterviewException(ErrorCode.AUTH_UNAUTHORIZED);

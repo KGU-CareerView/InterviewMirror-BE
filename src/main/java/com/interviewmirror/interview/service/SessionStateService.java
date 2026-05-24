@@ -1,18 +1,11 @@
 package com.interviewmirror.interview.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.exception.InterviewException;
-import com.interviewmirror.infrastructure.RabbitMQProducer;
 import com.interviewmirror.interview.dto.SessionStateResponse;
-import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSessionState;
-import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,13 +18,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @RequiredArgsConstructor
 public class SessionStateService {
 
-  private static final TypeReference<Map<String, Object>> QA_MAP_TYPE = new TypeReference<>() {};
-
   private final InterviewResultRepository resultRepository;
-  private final InterviewDetailRepository detailRepository;
   private final RedisSessionService redisSessionService;
-  private final RabbitMQProducer rabbitMQProducer;
-  private final ObjectMapper objectMapper;
+  private final FinalReportService finalReportService;
 
   @Transactional(readOnly = true)
   public SessionStateResponse getSessionState(Long sessionId) {
@@ -64,7 +53,7 @@ public class SessionStateService {
   public void changeStateBySystem(Long sessionId, InterviewSessionState nextState) {
     InterviewResult result =
         resultRepository
-            .findById(sessionId)
+            .findByIdForUpdate(sessionId)
             .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_NOT_FOUND));
     validateTransition(result, nextState);
     applyStateChange(sessionId, result, nextState);
@@ -72,7 +61,7 @@ public class SessionStateService {
 
   @Transactional
   public void autoPauseSession(Long sessionId) {
-    InterviewResult result = resultRepository.findById(sessionId).orElse(null);
+    InterviewResult result = resultRepository.findByIdForUpdate(sessionId).orElse(null);
     if (result == null) {
       return;
     }
@@ -125,7 +114,7 @@ public class SessionStateService {
   private InterviewResult getValidatedSession(Long sessionId, Long userId) {
     InterviewResult result =
         resultRepository
-            .findById(sessionId)
+            .findByIdForUpdate(sessionId)
             .orElseThrow(() -> new InterviewException(ErrorCode.SESSION_NOT_FOUND));
 
     if (!result.getUserId().equals(userId)) {
@@ -140,52 +129,14 @@ public class SessionStateService {
       Long sessionId, InterviewResult result, InterviewSessionState nextState) {
     result.setSessionState(nextState.name());
 
-    if (nextState.shouldPersistQa()) {
-      persistQaList(sessionId, result);
-    }
-
     runAfterCommit(
         () -> {
           redisSessionService.updateSessionState(sessionId, nextState.name());
 
-          if (nextState.shouldPersistQa()) {
-            redisSessionService.clearQaList(sessionId);
-
-            if (nextState == InterviewSessionState.ENDED) {
-              rabbitMQProducer.sendReportRequest(sessionId);
-            }
+          if (nextState == InterviewSessionState.ENDED) {
+            finalReportService.requestFinalReport(sessionId);
           }
         });
-  }
-
-  private void persistQaList(Long sessionId, InterviewResult result) {
-    List<String> qaJsonList = redisSessionService.getQaList(sessionId);
-    if (qaJsonList == null || qaJsonList.isEmpty()) {
-      return;
-    }
-
-    for (String qaJson : qaJsonList) {
-      try {
-        Map<String, Object> qaMap = objectMapper.readValue(qaJson, QA_MAP_TYPE);
-        detailRepository.save(
-            InterviewDetail.builder()
-                .interviewResult(result)
-                .qId(Long.valueOf(qaMap.get("quizID").toString()))
-                .question((String) qaMap.get("question"))
-                .answer((String) qaMap.get("answer"))
-                .emotionResult(
-                    qaMap.get("emotionResult") != null
-                        ? String.valueOf(qaMap.get("emotionResult"))
-                        : null)
-                .responseTimeSeconds(
-                    qaMap.get("responseTimeSeconds") != null
-                        ? Integer.valueOf(qaMap.get("responseTimeSeconds").toString())
-                        : 0)
-                .build());
-      } catch (Exception e) {
-        log.error("[SessionID: {}] Redis 문답 데이터 DB 저장 실패: {}", sessionId, e.getMessage());
-      }
-    }
   }
 
   private void runAfterCommit(Runnable runnable) {

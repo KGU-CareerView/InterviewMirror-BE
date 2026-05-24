@@ -3,6 +3,7 @@ package com.interviewmirror.realtime.controller;
 import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.common.dto.MessageResponse;
 import com.interviewmirror.realtime.dto.RealtimeAnswerRequest;
+import com.interviewmirror.realtime.dto.RealtimeAudioRequest;
 import com.interviewmirror.realtime.dto.RealtimeEndRequest;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
 import com.interviewmirror.realtime.service.RealtimeService;
@@ -36,11 +37,29 @@ public class RealtimeWebSocketController {
     realtimeService.analyzeFrame(request);
   }
 
+  @MessageMapping("/realtime.audio")
+  public void analyzeAudio(@Valid @Payload RealtimeAudioRequest request) {
+    log.info(
+        "[WebSocket REQUEST] destination=/app/realtime.audio payload={{sessionId={}, userId={}, timestamp={}, questionIndex={}, windowMs={}, isSpeaking={}, rms={}, zcr={}, speechDurationMs={}, silenceDurationMs={}}}",
+        request.getSessionId(),
+        request.getUserId(),
+        request.getTimestamp(),
+        request.getQuestionIndex(),
+        request.getWindowMs(),
+        request.getFeatures().getIsSpeaking(),
+        request.getFeatures().getRms(),
+        request.getFeatures().getZeroCrossingRate(),
+        request.getFeatures().getSpeechDurationMs(),
+        request.getFeatures().getSilenceDurationMs());
+    realtimeService.analyzeAudio(request);
+  }
+
   @MessageMapping("/realtime.end")
   public ApiResponse<MessageResponse> completeSession(@Valid @Payload RealtimeEndRequest request) {
     log.info(
-        "[WebSocket REQUEST] destination=/app/realtime.end payload={{sessionId={}}}",
-        request.getSessionId());
+        "[WebSocket REQUEST] destination=/app/realtime.end payload={{sessionId={}, includesAudio={}}}",
+        request.getSessionId(),
+        request.getIncludesAudio());
     MessageResponse response = realtimeService.completeSession(request);
     log.info(
         "[WebSocket RESPONSE] destination=/app/realtime.end payload={{sessionId={}, message={}}}",

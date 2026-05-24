@@ -16,4 +16,6 @@ public class RealtimeAnswerRequest {
   private String emotionResult;
 
   private Integer responseTimeSeconds;
+
+  private AudioSummaryDto audioSummary;
 }

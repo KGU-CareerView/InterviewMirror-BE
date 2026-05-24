@@ -4,10 +4,14 @@ import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.common.dto.MessageResponse;
 import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.exception.InterviewException;
+import com.interviewmirror.interview.service.RedisSessionService;
 import com.interviewmirror.interview.service.SessionService;
 import com.interviewmirror.realtime.dto.RealtimeAnswerRequest;
+import com.interviewmirror.realtime.dto.RealtimeAudioFeatures;
+import com.interviewmirror.realtime.dto.RealtimeAudioRequest;
 import com.interviewmirror.realtime.dto.RealtimeEndRequest;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -23,7 +27,46 @@ public class RealtimeService {
   private final SessionService sessionService;
   private final RealtimeQuestionGenerationService questionGenerationService;
   private final RealtimeMessagePublisher realtimeMessagePublisher;
+  private final RedisSessionService redisSessionService;
   private final SimpMessagingTemplate messagingTemplate;
+
+  private static final int LONG_PAUSE_WINDOW_THRESHOLD = 5;
+  private static final double TOO_QUIET_RMS_THRESHOLD = 0.015;
+
+  public void analyzeAudio(RealtimeAudioRequest request) {
+    RealtimeAudioFeatures features = request.getFeatures();
+    Long sessionIdLong = Long.parseLong(request.getSessionId());
+
+    if (Boolean.TRUE.equals(features.getIsSpeaking())) {
+      redisSessionService.resetSilenceWindows(sessionIdLong);
+
+      if (features.getRms() != null && features.getRms() < TOO_QUIET_RMS_THRESHOLD) {
+        realtimeMessagePublisher.publishAudioFeedback(
+            request.getSessionId(),
+            "VOLUME_FEEDBACK",
+            Map.of(
+                "status", "TOO_QUIET",
+                "avgRms", features.getRms(),
+                "message", "목소리가 작습니다. 조금 더 또렷하게 말씀해보세요."));
+      }
+    } else {
+      long silenceWindows = redisSessionService.incrementSilenceWindows(sessionIdLong);
+      if (silenceWindows == LONG_PAUSE_WINDOW_THRESHOLD) {
+        realtimeMessagePublisher.publishAudioFeedback(
+            request.getSessionId(),
+            "PAUSE_FEEDBACK",
+            Map.of(
+                "status", "LONG_PAUSE",
+                "silenceSeconds", silenceWindows,
+                "message", "침묵이 길어지고 있습니다. 핵심부터 이어서 답변해보세요."));
+      }
+    }
+
+    if (features.getZeroCrossingRate() != null) {
+      redisSessionService.appendZcrSample(
+          sessionIdLong, request.getQuestionIndex(), features.getZeroCrossingRate());
+    }
+  }
 
   public void analyzeFrame(RealtimeFrameRequest request) {
     try {
@@ -62,7 +105,8 @@ public class RealtimeService {
               request.getSessionId(),
               request.getAnswer(),
               request.getEmotionResult(),
-              request.getResponseTimeSeconds());
+              request.getResponseTimeSeconds(),
+              request.getAudioSummary());
 
       log.info(
           "Answer recorded, requesting follow-up question: sessionId={} previousQuestionPreview={}",

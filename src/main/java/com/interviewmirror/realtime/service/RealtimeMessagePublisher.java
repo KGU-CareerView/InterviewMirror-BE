@@ -64,6 +64,16 @@ public class RealtimeMessagePublisher {
         "/topic/session/" + sessionId + "/error", ApiResponse.fail(errorCode));
   }
 
+  public void publishAudioFeedback(String sessionId, String type, Map<String, Object> data) {
+    log.info(
+        "[WebSocket RESPONSE] destination=/topic/realtime/{}/audio payload={{type={}, status={}}}",
+        sessionId,
+        type,
+        data.get("status"));
+    messagingTemplate.convertAndSend(
+        "/topic/realtime/" + sessionId + "/audio", Map.of("type", type, "data", data));
+  }
+
   private String preview(String value) {
     if (value == null || value.isBlank()) {
       return "";

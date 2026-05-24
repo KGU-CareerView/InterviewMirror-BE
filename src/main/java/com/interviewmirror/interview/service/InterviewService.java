@@ -1,16 +1,24 @@
 package com.interviewmirror.interview.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.util.JsonFormat;
 import com.interviewmirror.exception.BusinessException;
 import com.interviewmirror.exception.ErrorCode;
-import com.interviewmirror.interview.dto.AiReportResponse;
+import com.interviewmirror.grpc.proto.FinalReportResponse;
+import com.interviewmirror.grpc.proto.QuestionFeedback;
 import com.interviewmirror.interview.dto.InterviewReportResponse;
 import com.interviewmirror.interview.dto.InterviewResultResponse;
+import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewReport;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.repository.InterviewReportRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +32,7 @@ public class InterviewService {
 
   private final InterviewResultRepository resultRepository;
   private final SessionService sessionService; // 1. 의존성 주입 추가
+  private final AudioScoreService audioScoreService;
 
   // 특정 세션의 면접 결과(감정 분석 데이터)를 조회합니다.
   @Transactional(readOnly = true)
@@ -42,8 +51,16 @@ public class InterviewService {
                         .answer(detail.getAnswer())
                         .emotionResult(detail.getEmotionResult())
                         .responseTimeSeconds(detail.getResponseTimeSeconds())
+                        .totalScore(detail.getTotalScore())
+                        .contentScore(detail.getContentScore())
+                        .voiceScore(detail.getAudioScore())
+                        .expressionScore(detail.getExpressionScore())
+                        .feedback(detail.getFeedback())
+                        .contentFeedback(detail.getContentFeedback())
+                        .voiceFeedback(detail.getVoiceFeedback())
+                        .expressionFeedback(detail.getExpressionFeedback())
                         .build())
-            .toList(); // Java 16 이상이면 toList() 사용, 미만이면 collect(Collectors.toList())
+            .toList();
 
     // 부모 데이터와 자식 데이터를 합쳐서 최종 DTO 생성 및 반환
     return InterviewResultResponse.builder()
@@ -69,36 +86,96 @@ public class InterviewService {
   }
 
   private final InterviewReportRepository reportRepository;
+  private final ObjectMapper objectMapper;
 
   @Transactional
-  public void saveInterviewReport(AiReportResponse response) {
-    if (reportRepository.existsById(response.getSessionId())) {
-      log.info("[RabbitMQ] 이미 저장된 리포트. 무시합니다. SessionID: {}", response.getSessionId());
+  public void saveReportFromGrpc(Long sessionId, FinalReportResponse response) {
+    if (reportRepository.existsById(sessionId)) {
+      log.info("[gRPC] 이미 저장된 리포트. 무시합니다. SessionID: {}", sessionId);
       return;
     }
 
-    // 예외를 던지지 않고 Optional로 받아서 부드럽게 처리
     resultRepository
-        .findById(response.getSessionId())
+        .findById(sessionId)
         .ifPresentOrElse(
             result -> {
+              applyQuestionFeedbacks(result, response.getQuestionFeedbacksList());
+
+              Integer audioScore = audioScoreService.calculateSessionScore(result.getDetails());
+              int scoredQuestionCount =
+                  (int)
+                      result.getDetails().stream()
+                          .filter(detail -> detail.getAudioScore() != null)
+                          .count();
+
+              String aiAnalysisJson = toJson(response);
+              String mergedAnalysisJson =
+                  audioScoreService.mergeAudioAnalysis(
+                      aiAnalysisJson, audioScore, scoredQuestionCount);
+
               InterviewReport report =
                   InterviewReport.builder()
                       .interviewResult(result)
-                      .totalScore(response.getTotalScore())
-                      .feedback(response.getFeedback())
-                      .strengths(response.getStrengths())
-                      .weaknesses(response.getWeaknesses())
-                      .aiAnalysisJson(response.getAiAnalysisJson())
+                      .totalScore((int) Math.round(response.getOverallScore()))
+                      .feedback(response.getFinalAdvice())
+                      .strengths(serializeList(response.getStrengthsList()))
+                      .weaknesses(serializeList(response.getWeaknessesList()))
+                      .aiAnalysisJson(mergedAnalysisJson)
                       .build();
               reportRepository.save(report);
+              log.info(
+                  "[gRPC] 리포트 저장 완료. SessionID: {} score={}", sessionId, report.getTotalScore());
             },
-            () -> {
-              // 세션이 삭제된 경우: 에러를 던지지 않고 로그만 남기고 정상 종료 처리(ACK)
-              log.warn(
-                  "[RabbitMQ] 리포트 수신했으나 해당 세션을 찾을 수 없습니다 (삭제됨). SessionID: {}",
-                  response.getSessionId());
-            });
+            () -> log.warn("[gRPC] 리포트 수신했으나 세션을 찾을 수 없습니다 (삭제됨). SessionID: {}", sessionId));
+  }
+
+  // 질문별 피드백을 인덱스 매칭하여 InterviewDetail에 반영 (JPA dirty checking으로 자동 저장)
+  private void applyQuestionFeedbacks(InterviewResult result, List<QuestionFeedback> feedbacks) {
+    if (feedbacks == null || feedbacks.isEmpty()) {
+      return;
+    }
+
+    List<InterviewDetail> details = result.getDetails();
+    Map<Integer, InterviewDetail> detailByIndex =
+        IntStream.range(0, details.size())
+            .boxed()
+            .collect(Collectors.toMap(i -> i + 1, details::get, (a, b) -> a));
+
+    for (QuestionFeedback feedback : feedbacks) {
+      InterviewDetail detail = detailByIndex.get(feedback.getIndex());
+      if (detail == null) {
+        log.warn(
+            "[gRPC] 질문 인덱스에 해당하는 InterviewDetail 없음 sessionId={} index={}",
+            result.getSessionId(),
+            feedback.getIndex());
+        continue;
+      }
+      detail.setTotalScore((int) Math.round(feedback.getTotalScore()));
+      detail.setContentScore((int) Math.round(feedback.getContentScore()));
+      detail.setExpressionScore((int) Math.round(feedback.getExpressionScore()));
+      detail.setAudioScore((int) Math.round(feedback.getVoiceScore()));
+      detail.setFeedback(feedback.getOverallFeedback());
+      detail.setContentFeedback(feedback.getContentFeedback());
+      detail.setVoiceFeedback(feedback.getVoiceFeedback());
+      detail.setExpressionFeedback(feedback.getExpressionFeedback());
+    }
+  }
+
+  private String toJson(FinalReportResponse response) {
+    try {
+      return JsonFormat.printer().includingDefaultValueFields().print(response);
+    } catch (InvalidProtocolBufferException e) {
+      log.warn("[gRPC] FinalReportResponse 직렬화 실패: {}", e.getMessage());
+      return "{}";
+    }
+  }
+
+  private String serializeList(List<?> list) {
+    try {
+      return objectMapper.writeValueAsString(list);
+    } catch (JsonProcessingException e) {
+      return "[]";
+    }
   }
 
   @Transactional(readOnly = true)

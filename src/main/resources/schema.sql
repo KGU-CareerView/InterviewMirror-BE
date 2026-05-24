@@ -50,6 +50,15 @@ CREATE TABLE IF NOT EXISTS interview_details (
                                                  answer_text TEXT,                            -- 사용자 답변 내용
                                                  emotion_result VARCHAR(50),                  -- 해당 답변 시 감정 분석 결과
     response_time_seconds INT,                   -- 답변에 소요된 시간
+    audio_summary_json TEXT,                     -- 질문별 음성 분석 요약 JSON
+    audio_score INT,                             -- 질문별 음성 점수 (AI VoiceTone 분석 결과)
+    total_score INT,                             -- 질문별 종합 점수 (AI 최종 리포트 결과)
+    content_score INT,                           -- 질문별 답변 내용/정확도 점수
+    expression_score INT,                        -- 질문별 표정 점수
+    feedback TEXT,                               -- 질문별 종합 피드백
+    content_feedback TEXT,                       -- 답변 내용 피드백
+    voice_feedback TEXT,                         -- 목소리 피드백
+    expression_feedback TEXT,                    -- 표정 피드백
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_details_session FOREIGN KEY (session_id) REFERENCES interview_results(session_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

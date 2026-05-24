@@ -9,21 +9,22 @@ option java_package = "com.interviewmirror.grpc.proto";
 service InterviewAIService {
   rpc AnalyzeFrame (FeatureRequest) returns (AnalysisResponse);
   rpc AnalyzeFrameStream (stream FeatureRequest) returns (stream AnalysisResponse);
+
   rpc HealthCheck (HealthRequest) returns (HealthResponse);
 
-  rpc GenerateInitialQuestions (InitialQuestionGenerateRequest)
-      returns (InitialQuestionGenerateResponse);
-  rpc GenerateFollowUpQuestion (FollowUpQuestionGenerateRequest)
-      returns (FollowUpQuestionGenerateResponse);
+  rpc GenerateInitialQuestions (InitialQuestionGenerateRequest) returns (InitialQuestionGenerateResponse);
+  rpc GenerateFollowUpQuestion (FollowUpQuestionGenerateRequest) returns (FollowUpQuestionGenerateResponse);
+
+  rpc AnalyzeVoiceTone (VoiceToneAnalysisRequest) returns (VoiceToneAnalysisResponse);
+
+  rpc GenerateFinalReport (FinalReportRequest) returns (FinalReportResponse);
 }
 
 message FeatureRequest {
   string session_id = 1;
   string user_id = 2;
-
   repeated int32 tensor_shape = 3;
   repeated float features = 4;
-
   int64 timestamp = 5;
   bool face_detected = 6;
   BoundingBox bbox = 7;
@@ -53,12 +54,13 @@ message HealthResponse {
   string status = 1;
   string model_path = 2;
   string question_client_status = 3;
+  string voice_tone_analyzer_status = 4;
+  string report_client_status = 5;
 }
 
 message InitialQuestionGenerateRequest {
   string session_id = 1;
   string user_id = 2;
-
   string category = 3;
   string interview_type = 4;
   string difficulty = 5;
@@ -77,10 +79,8 @@ message InitialQuestionGenerateResponse {
 message FollowUpQuestionGenerateRequest {
   string session_id = 1;
   string user_id = 2;
-
   string previous_question = 3;
   string answer = 4;
-
   string category = 5;
   string interview_type = 6;
   string difficulty = 7;
@@ -108,4 +108,144 @@ message InterviewTurn {
   int32 index = 1;
   string question = 2;
   string answer = 3;
+}
+
+message AudioSummaryData {
+  float speech_ratio = 1;
+  float avg_rms = 2;
+  float rms_cov = 3;
+  int32 wpm = 4;
+  int32 pause_count = 5;
+  float avg_pause_duration_ms = 6;
+  float max_pause_duration_ms = 7;
+  int32 response_latency_ms = 8;
+  bool end_fade_out = 9;
+  int32 estimated_filler_count = 10;
+  int32 filler_word_count = 11;
+  int32 word_count = 12;
+  float ttr = 13;
+}
+
+message VoiceToneAnalysisRequest {
+  string session_id = 1;
+  string user_id = 2;
+  int32 question_index = 3;
+  int32 response_time_seconds = 4;
+  AudioSummaryData audio_summary = 5;
+  repeated float zcr_samples = 6;
+}
+
+message VoiceToneAnalysisResponse {
+  string session_id = 1;
+  string user_id = 2;
+
+  double pitch_mean = 3;
+  double pitch_std = 4;
+  double pitch_stability = 5;
+
+  double energy_mean = 6;
+  double energy_std = 7;
+  double energy_stability = 8;
+
+  double pause_ratio = 9;
+  double speech_duration_sec = 10;
+  double total_duration_sec = 11;
+
+  double overall_stability_score = 12;
+  string feedback = 13;
+}
+
+message ScoreSample {
+  int64 timestamp = 1;
+  double expression_score = 2;
+  double voice_score = 3;
+  double total_score = 4;
+  string expression_label = 5;
+  string note = 6;
+}
+
+message QuestionAnalysisResult {
+  int32 index = 1;
+  string question = 2;
+  string answer = 3;                       // STT 변환된 답변 (대본)
+  string follow_up_question = 4;
+  string subtitle_summary = 5;
+
+  double voice_score = 6;                  // 백엔드가 산출한 음성 점수 (AI가 참고용으로 사용)
+  double expression_score = 7;             // 표정 분석 점수 (backend computed)
+  double total_score = 8;
+
+  string voice_feedback = 9;
+  string expression_feedback = 10;
+
+  AudioSummaryData audio_summary = 11;     // 음성 분석 raw 데이터
+  repeated float zcr_samples = 12;         // ZCR 시계열
+
+  string emotion_result_json = 13;         // 질문별 표정 감정 분석 결과 (JSON)
+  int32 response_time_seconds = 14;        // 응답 소요 시간
+  int32 answer_length = 15;                // STT 변환된 답변 글자 수
+}
+
+message FinalReportRequest {
+  string session_id = 1;
+  string user_id = 2;
+  string category = 3;
+  string interview_type = 4;
+  string difficulty = 5;
+  string resume_text = 6;
+  string language = 7;
+
+  repeated QuestionAnalysisResult question_results = 8;
+  repeated ScoreSample timeline_scores = 9;
+
+  string emotion_graph_json = 10;          // 세션 전체 감정 변화 타임라인 (JSON)
+}
+
+message QuestionFeedback {
+  int32 index = 1;
+  double total_score = 2;                  // 질문별 종합 점수
+  double content_score = 3;                // 답변 내용/정확도 점수
+  double voice_score = 4;                  // 목소리 점수
+  double expression_score = 5;             // 표정 점수
+  string overall_feedback = 6;             // 질문별 종합 피드백
+  string content_feedback = 7;             // 답변 내용 피드백
+  string voice_feedback = 8;               // 목소리 피드백
+  string expression_feedback = 9;          // 표정 피드백
+}
+
+message ReportStrengthMessage {
+  string title = 1;
+  string detail = 2;
+}
+
+message ReportWeaknessMessage {
+  string title = 1;
+  string detail = 2;
+  string improvement = 3;
+}
+
+message ReportTimeInsightMessage {
+  string time_range = 1;
+  string observation = 2;
+  string suggestion = 3;
+}
+
+message FinalReportResponse {
+  string session_id = 1;
+  string user_id = 2;
+
+  string overall_summary = 3;
+  double overall_score = 4;
+
+  double content_score = 5;
+  double voice_score = 6;
+  double expression_score = 7;
+
+  repeated ReportStrengthMessage strengths = 8;
+  repeated ReportWeaknessMessage weaknesses = 9;
+  repeated ReportTimeInsightMessage time_based_insights = 10;
+
+  string final_advice = 11;
+
+  repeated QuestionFeedback question_feedbacks = 12;  // 질문별 피드백 (대본은 백엔드에서 보유)
 }

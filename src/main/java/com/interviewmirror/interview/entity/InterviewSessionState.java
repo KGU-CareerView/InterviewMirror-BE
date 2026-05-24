@@ -23,7 +23,4 @@ public enum InterviewSessionState {
     }
   }
 
-  public boolean shouldPersistQa() {
-    return this == PAUSED || this == ENDED;
-  }
 }

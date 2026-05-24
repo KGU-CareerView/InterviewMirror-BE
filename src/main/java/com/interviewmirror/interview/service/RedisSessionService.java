@@ -35,7 +35,9 @@ public class RedisSessionService {
 
   // 질답 저장 (List 형태)
   public void addQaToRedis(Long sessionId, String qaJson) {
-    redisTemplate.opsForList().rightPush("session:" + sessionId + ":qa", qaJson);
+    String key = "session:" + sessionId + ":qa";
+    redisTemplate.opsForList().rightPush(key, qaJson);
+    redisTemplate.expire(key, Duration.ofHours(24));
   }
 
   public List<String> getQaList(Long sessionId) {
@@ -73,5 +75,29 @@ public class RedisSessionService {
   public void clearQaList(Long sessionId) {
     String key = "session:" + sessionId + ":qa";
     redisTemplate.delete(key);
+  }
+
+  public long incrementSilenceWindows(Long sessionId) {
+    String key = "session:" + sessionId + ":silence_windows";
+    Long count = redisTemplate.opsForValue().increment(key);
+    redisTemplate.expire(key, Duration.ofMinutes(5));
+    return count == null ? 0 : count;
+  }
+
+  public void resetSilenceWindows(Long sessionId) {
+    redisTemplate.delete("session:" + sessionId + ":silence_windows");
+  }
+
+  public void appendZcrSample(Long sessionId, int questionIndex, double zcr) {
+    String key = "session:" + sessionId + ":zcr:" + questionIndex;
+    redisTemplate.opsForList().rightPush(key, String.valueOf(zcr));
+    redisTemplate.expire(key, Duration.ofHours(2));
+  }
+
+  public List<Float> getZcrSamples(Long sessionId, int questionIndex) {
+    String key = "session:" + sessionId + ":zcr:" + questionIndex;
+    List<Object> raw = redisTemplate.opsForList().range(key, 0, -1);
+    if (raw == null) return List.of();
+    return raw.stream().map(o -> Float.parseFloat(o.toString())).collect(Collectors.toList());
   }
 }

@@ -7,7 +7,7 @@ all: up
 
 up:
 	$(GRADLE) build -x test
-	$(COMPOSE) up --build
+	$(COMPOSE) up --build -d
 
 build:
 	$(GRADLE) build -x test

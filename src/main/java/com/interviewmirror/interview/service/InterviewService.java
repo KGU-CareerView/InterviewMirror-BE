@@ -13,6 +13,7 @@ import com.interviewmirror.interview.dto.InterviewResultResponse;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewReport;
 import com.interviewmirror.interview.entity.InterviewResult;
+import com.interviewmirror.interview.entity.ReportStatus;
 import com.interviewmirror.interview.repository.InterviewReportRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
 import java.util.List;
@@ -123,10 +124,23 @@ public class InterviewService {
                       .aiAnalysisJson(mergedAnalysisJson)
                       .build();
               reportRepository.save(report);
+              result.setReportStatus(ReportStatus.COMPLETED);
               log.info(
                   "[gRPC] 리포트 저장 완료. SessionID: {} score={}", sessionId, report.getTotalScore());
             },
             () -> log.warn("[gRPC] 리포트 수신했으나 세션을 찾을 수 없습니다 (삭제됨). SessionID: {}", sessionId));
+  }
+
+  // gRPC onError 콜백에서 호출 — 재시도 가능 여부에 따라 PENDING/FAILED 마킹
+  @Transactional
+  public void markReportStatus(Long sessionId, ReportStatus status) {
+    resultRepository
+        .findById(sessionId)
+        .ifPresent(
+            result -> {
+              result.setReportStatus(status);
+              log.info("[gRPC] 리포트 상태 갱신: SessionID={} status={}", sessionId, status);
+            });
   }
 
   // 질문별 피드백을 인덱스 매칭하여 InterviewDetail에 반영 (JPA dirty checking으로 자동 저장)
@@ -188,6 +202,10 @@ public class InterviewService {
     // 세션의 주인과 현재 요청한 유저가 다르면 예외 발생
     if (!result.getUserId().equals(userId)) {
       throw new BusinessException(ErrorCode.AUTH_UNAUTHORIZED); // 또는 접근 권한 에러코드
+    }
+
+    if (result.getReportStatus() == ReportStatus.FAILED) {
+      throw new BusinessException(ErrorCode.REPORT_GENERATION_FAILED);
     }
 
     InterviewReport report =

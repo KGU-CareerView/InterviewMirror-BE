@@ -1,6 +1,8 @@
 package com.interviewmirror.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interviewmirror.exception.BusinessException;
+import com.interviewmirror.exception.ErrorCode;
 import com.interviewmirror.grpc.proto.AudioSummaryData;
 import com.interviewmirror.grpc.proto.FinalReportRequest;
 import com.interviewmirror.grpc.proto.FinalReportResponse;
@@ -9,14 +11,22 @@ import com.interviewmirror.grpc.proto.VoiceToneAnalysisRequest;
 import com.interviewmirror.interview.entity.InterviewDetail;
 import com.interviewmirror.interview.entity.InterviewResult;
 import com.interviewmirror.interview.entity.InterviewSetting;
+import com.interviewmirror.interview.entity.ReportStatus;
 import com.interviewmirror.interview.repository.InterviewDetailRepository;
 import com.interviewmirror.interview.repository.InterviewResultRepository;
 import com.interviewmirror.interview.repository.InterviewSettingRepository;
 import com.interviewmirror.realtime.client.AiGrpcClient;
 import com.interviewmirror.realtime.dto.AudioSummaryDto;
+import com.interviewmirror.realtime.dto.RealtimeResponse;
+import com.interviewmirror.realtime.repository.RealtimeBufferRepository;
+import com.interviewmirror.realtime.service.RealtimeFrameBuffer;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +45,8 @@ public class FinalReportService {
   private final InterviewDetailRepository detailRepository;
   private final InterviewSettingRepository settingRepository;
   private final RedisSessionService redisSessionService;
+  private final RealtimeBufferRepository realtimeBufferRepository;
+  private final RealtimeFrameBuffer realtimeFrameBuffer;
   private final AiGrpcClient aiGrpcClient;
   private final InterviewService interviewService;
   private final ObjectMapper objectMapper;
@@ -51,7 +63,10 @@ public class FinalReportService {
     InterviewSetting setting =
         settingRepository.findByInterviewResult_SessionId(sessionId).orElse(null);
 
+    aggregateEmotionGraph(result);
     analyzeVoiceToneForAllQuestions(result, details);
+
+    result.setReportStatus(ReportStatus.PENDING);
 
     FinalReportRequest request = buildRequest(result, setting, details);
 
@@ -67,7 +82,10 @@ public class FinalReportService {
 
           @Override
           public void onError(Throwable t) {
-            log.error("[gRPC] 최종 리포트 생성 실패 sessionId={}", sessionId, t);
+            boolean retryable = isRetryable(t);
+            log.error("[gRPC] 최종 리포트 생성 실패 sessionId={} retryable={}", sessionId, retryable, t);
+            interviewService.markReportStatus(
+                sessionId, retryable ? ReportStatus.PENDING : ReportStatus.FAILED);
           }
 
           @Override
@@ -75,6 +93,74 @@ public class FinalReportService {
             log.info("[gRPC] 최종 리포트 생성 완료 sessionId={}", sessionId);
           }
         });
+  }
+
+  // 리포트 생성 재시도 — PENDING/FAILED 상태에서만 허용
+  @Transactional
+  public void retryReportGeneration(Long sessionId, Long userId) {
+    InterviewResult result =
+        resultRepository
+            .findById(sessionId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+    if (!result.getUserId().equals(userId)) {
+      throw new BusinessException(ErrorCode.AUTH_UNAUTHORIZED);
+    }
+
+    if (result.getReportStatus() == ReportStatus.COMPLETED) {
+      throw new BusinessException(ErrorCode.INVALID_REQUEST);
+    }
+
+    log.info("[gRPC] 리포트 재시도 요청: SessionID={} 현재상태={}", sessionId, result.getReportStatus());
+    requestFinalReport(sessionId);
+  }
+
+  // gRPC 표준 상태 코드 외에도, AI 서버가 INTERNAL로 래핑하면서 메시지에
+  // RESOURCE_EXHAUSTED / 429를 남기는 경우(Gemini quota 등)도 재시도 가능으로 판정
+  private boolean isRetryable(Throwable t) {
+    if (t instanceof StatusRuntimeException sre) {
+      Status.Code code = sre.getStatus().getCode();
+      if (code == Status.Code.RESOURCE_EXHAUSTED
+          || code == Status.Code.UNAVAILABLE
+          || code == Status.Code.DEADLINE_EXCEEDED) {
+        return true;
+      }
+      String description = sre.getStatus().getDescription();
+      if (description != null
+          && (description.contains("RESOURCE_EXHAUSTED") || description.contains("429"))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void aggregateEmotionGraph(InterviewResult result) {
+    String sessionId = String.valueOf(result.getSessionId());
+    // realtime.end 이후 도착한 프레임도 포함하기 위해 마지막으로 한 번 더 flush
+    realtimeFrameBuffer.flushSession(sessionId);
+    List<RealtimeResponse> frames = realtimeBufferRepository.findAll(sessionId);
+    if (frames.isEmpty()) {
+      log.warn("[gRPC] emotionGraph 생성 - 실시간 프레임 없음 sessionId={}", sessionId);
+      return;
+    }
+
+    List<Map<String, Object>> timeline = new ArrayList<>(frames.size());
+    for (RealtimeResponse frame : frames) {
+      Map<String, Object> point = new LinkedHashMap<>();
+      point.put("timestamp", frame.getTimestamp());
+      point.put("label", frame.getLabel());
+      point.put("confidence", frame.getConfidence());
+      point.put("faceDetected", frame.isFaceDetected());
+      timeline.add(point);
+    }
+
+    try {
+      String emotionGraphJson = objectMapper.writeValueAsString(timeline);
+      result.setEmotionGraph(emotionGraphJson);
+      log.info("[gRPC] emotionGraph 집계 완료 sessionId={} frameCount={}", sessionId, frames.size());
+    } catch (Exception e) {
+      log.warn("[gRPC] emotionGraph 직렬화 실패 sessionId={}: {}", sessionId, e.getMessage());
+    }
   }
 
   private void analyzeVoiceToneForAllQuestions(

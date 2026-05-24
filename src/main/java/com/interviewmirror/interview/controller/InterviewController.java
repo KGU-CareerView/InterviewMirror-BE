@@ -5,6 +5,7 @@ import com.interviewmirror.common.ApiResponse;
 import com.interviewmirror.interview.dto.InterviewHistoryResponse;
 import com.interviewmirror.interview.dto.InterviewReportResponse;
 import com.interviewmirror.interview.dto.InterviewResultResponse;
+import com.interviewmirror.interview.service.FinalReportService;
 import com.interviewmirror.interview.service.InterviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class InterviewController {
 
   private final InterviewService interviewService;
+  private final FinalReportService finalReportService;
 
   @GetMapping("/{sessionId}/result")
   public ResponseEntity<ApiResponse<InterviewResultResponse>> getResult(
@@ -53,5 +55,14 @@ public class InterviewController {
         interviewService.getInterviewReport(sessionId, userDetails.getId());
 
     return ResponseEntity.ok(ApiResponse.success(response));
+  }
+
+  // AI 서버 장애로 리포트 생성이 실패했을 때 재시도. PENDING/FAILED 상태에서만 허용.
+  @PostMapping("/{sessionId}/report/retry")
+  public ResponseEntity<ApiResponse<Void>> retryReport(
+      @PathVariable("sessionId") Long sessionId,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    finalReportService.retryReportGeneration(sessionId, userDetails.getId());
+    return ResponseEntity.accepted().body(ApiResponse.success(null));
   }
 }

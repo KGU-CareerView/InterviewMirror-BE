@@ -50,7 +50,11 @@ public enum ErrorCode {
   INTERNAL_COMMUNICATION_ERROR(
       HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_COMMUNICATION_ERROR", "내부 통신 중 오류가 발생했습니다."),
   SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "해당 면접 세션을 찾을 수 없습니다."),
-  REPORT_NOT_READY(HttpStatus.NOT_FOUND, "REPORT_NOT_READY", "아직 AI가 분석 중입니다. 잠시 후 다시 시도해주세요.");
+  REPORT_NOT_READY(HttpStatus.NOT_FOUND, "REPORT_NOT_READY", "아직 AI가 분석 중입니다. 잠시 후 다시 시도해주세요."),
+  REPORT_GENERATION_FAILED(
+      HttpStatus.BAD_GATEWAY,
+      "REPORT_GENERATION_FAILED",
+      "AI 서버 장애로 리포트 생성에 실패했습니다. 재시도 API를 호출해주세요.");
 
   private final HttpStatus status;
   private final String code;

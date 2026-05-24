@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS interview_results (
                                                  session_state VARCHAR(20),      -- 세션 상태 (INIT, START, END 등)
     video_url VARCHAR(255),         -- S3 비디오 경로
     emotion_graph_json LONGTEXT,    -- 전체 감정 변화 데이터 (JSON 형태)
+    report_status VARCHAR(20) DEFAULT 'PENDING',  -- AI 리포트 생성 상태 (PENDING/COMPLETED/FAILED)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_results_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

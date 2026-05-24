@@ -40,6 +40,7 @@ public class InterviewControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @MockitoBean private InterviewService interviewService;
+  @MockitoBean private com.interviewmirror.interview.service.FinalReportService finalReportService;
   @MockitoBean private SessionService sessionService;
   @MockitoBean private InterviewPreparationService interviewPreparationService;
   @MockitoBean private RedisSessionService redisSessionService;

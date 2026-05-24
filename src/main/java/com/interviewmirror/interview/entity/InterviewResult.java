@@ -38,4 +38,9 @@ public class InterviewResult {
   @Lob
   @Column(name = "emotion_graph_json", columnDefinition = "LONGTEXT")
   private String emotionGraph;
+
+  @Builder.Default
+  @Enumerated(EnumType.STRING)
+  @Column(name = "report_status", length = 20)
+  private ReportStatus reportStatus = ReportStatus.PENDING;
 }

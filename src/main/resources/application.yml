@@ -43,6 +43,8 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            google:
+              redirect-uri: "https://cameron-hereditary-suppositively.ngrok-free.dev/api/login/oauth2/code/google"
             scope:
               - email
               - profile
@@ -50,7 +52,7 @@ spring:
 grpc:
   client:
     ai-server:
-      address: 'static://${AI_SERVER_HOST:localhost}:${AI_SERVER_PORT:50051}'
+      address: "static://${AI_SERVER_HOST:localhost}:${AI_SERVER_PORT:50051}"
       negotiation-type: ${GRPC_NEGOTIATION_TYPE:plaintext}
 
 realtime:
@@ -72,14 +74,14 @@ springdoc:
 cloud:
   aws:
     credentials:
-      access-key: ${AWS_ACCESS_KEY:dummy}   # 환경변수에서 로드
-      secret-key: ${AWS_SECRET_KEY:dummy}   # 환경변수에서 로드
+      access-key: ${AWS_ACCESS_KEY:dummy} # 환경변수에서 로드
+      secret-key: ${AWS_SECRET_KEY:dummy} # 환경변수에서 로드
     region:
-      static: ap-northeast-2          # 서울 리전 (보통 고정해서 사용)
+      static: ap-northeast-2 # 서울 리전 (보통 고정해서 사용)
     s3:
-      bucket: ${S3_BUCKET_NAME:dummy_name}       # 사용할 S3 버킷 이름
+      bucket: ${S3_BUCKET_NAME:dummy_name} # 사용할 S3 버킷 이름
     stack:
-      auto: false                     # 로컬/일반 서버 실행 시 EC2 메타데이터 체크 방지
+      auto: false # 로컬/일반 서버 실행 시 EC2 메타데이터 체크 방지
 
 jwt:
   secret: ${JWT_SECRET}

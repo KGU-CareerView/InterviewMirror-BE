@@ -2,6 +2,7 @@ package com.interviewmirror.config;
 
 import com.interviewmirror.auth.jwt.JwtAuthenticationFilter;
 import com.interviewmirror.auth.oauth.OAuth2LoginSuccessHandler;
+import com.interviewmirror.auth.security.JwtAuthenticationEntryPoint;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +28,7 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+  private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
   @Value("${cors.allowed-origins:}")
   private String allowedOrigins;
@@ -64,6 +66,8 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
+        .exceptionHandling(
+            exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
         .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler))
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -82,6 +86,7 @@ public class SecurityConfig {
     }
     origins.add("http://localhost:5173");
     origins.add("http://localhost:5174");
+    origins.add("https://interview-mirror-fe.vercel.app");
 
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOriginPatterns(origins);

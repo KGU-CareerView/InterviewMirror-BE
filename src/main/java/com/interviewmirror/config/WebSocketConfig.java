@@ -60,6 +60,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
     origins.add("http://localhost:5173");
     origins.add("http://localhost:5174");
+    origins.add("https://interview-mirror-fe.vercel.app");
     return origins.toArray(String[]::new);
   }
 }

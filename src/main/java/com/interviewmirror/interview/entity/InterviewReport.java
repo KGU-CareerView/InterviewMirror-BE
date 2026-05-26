@@ -16,8 +16,15 @@ public class InterviewReport {
 
   @OneToOne
   @MapsId // InterviewResult의 PK를 이 엔티티의 PK로 매핑
-  @JoinColumn(name = "sessionID")
+  @JoinColumn(name = "session_id")
   private InterviewResult interviewResult;
+
+  @PrePersist
+  private void ensureSessionIdFromRelationship() {
+    if (sessionId == null && interviewResult != null) {
+      sessionId = interviewResult.getSessionId();
+    }
+  }
 
   private Integer totalScore; // 종합 점수
 

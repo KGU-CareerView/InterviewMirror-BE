@@ -23,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class SessionService {
+
+  private static final String FRONTEND_PLACEHOLDER_ANSWER = "사용자가 답변을 완료했습니다.";
+
   private final InterviewResultRepository resultRepository;
   private final InterviewDetailRepository detailRepository;
   private final RedisSessionService redisSessionService;
@@ -58,6 +61,9 @@ public class SessionService {
     String question = redisSessionService.getLastQuestion(sessionId);
     String safeQuestion = (question != null) ? question : "";
 
+    String safeAnswer = sanitizePlaceholder(sessionId, answer);
+    logSttQuality(sessionId, safeAnswer, responseTimeSeconds);
+
     InterviewResult result =
         resultRepository
             .findById(sessionId)
@@ -68,7 +74,7 @@ public class SessionService {
             .interviewResult(result)
             .qId(System.currentTimeMillis())
             .question(safeQuestion)
-            .answer(answer)
+            .answer(safeAnswer)
             .emotionResult(emotionResult)
             .responseTimeSeconds(responseTimeSeconds)
             .audioSummaryJson(audioScoreService.serializeSummary(audioSummary))
@@ -76,6 +82,51 @@ public class SessionService {
             .build());
 
     return safeQuestion;
+  }
+
+  private String sanitizePlaceholder(Long sessionId, String answer) {
+    if (answer != null && FRONTEND_PLACEHOLDER_ANSWER.equals(answer.trim())) {
+      log.warn(
+          "[STT] 누적 transcript도 없어 프론트 placeholder가 그대로 도달 - 빈 문자열로 저장 sessionId={}", sessionId);
+      return "";
+    }
+    return answer == null ? "" : answer;
+  }
+
+  private void logSttQuality(Long sessionId, String answer, Integer responseTimeSeconds) {
+    int chars = answer == null ? 0 : answer.length();
+    int words = (answer == null || answer.isBlank()) ? 0 : answer.trim().split("\\s+").length;
+    int seconds = responseTimeSeconds == null ? 0 : responseTimeSeconds;
+    String charsPerSec = seconds > 0 ? String.format("%.2f", (double) chars / seconds) : "n/a";
+
+    if (chars == 0) {
+      log.warn("[STT] 빈 답변 수신 - STT 실패 가능성 sessionId={} responseTimeSec={}", sessionId, seconds);
+      return;
+    }
+    if (chars < 10 || (seconds >= 5 && chars < seconds * 2)) {
+      log.warn(
+          "[STT] 답변이 비정상적으로 짧음 - STT 누락 의심 sessionId={} chars={} words={} responseTimeSec={} charsPerSec={} answer='{}'",
+          sessionId,
+          chars,
+          words,
+          seconds,
+          charsPerSec,
+          answer);
+      return;
+    }
+    log.info(
+        "[STT] 답변 수신 정상 sessionId={} chars={} words={} responseTimeSec={} charsPerSec={} preview='{}'",
+        sessionId,
+        chars,
+        words,
+        seconds,
+        charsPerSec,
+        previewAnswer(answer));
+  }
+
+  private String previewAnswer(String value) {
+    if (value == null || value.isBlank()) return "";
+    return value.length() <= 80 ? value : value.substring(0, 80) + "...";
   }
 
   public PresignedUrlResponse createPresignedUrl(Long sessionId, PresignedUrlRequest request) {

@@ -28,6 +28,17 @@ public class InterviewPreparationService {
   @Transactional
   public InterviewSettingResponse saveSetting(
       Long sessionId, Long userId, InterviewSettingRequest request) {
+    log.info(
+        "[SessionID: {}] 면접 설정 요청 수신 - userId={}, category='{}', interviewType='{}', difficulty='{}', questionCount={}, timePerQuestion={}, resumeContentLength={}",
+        sessionId,
+        userId,
+        request.getCategory(),
+        request.getInterviewType(),
+        request.getDifficulty(),
+        request.getQuestionCount(),
+        request.getTimePerQuestion(),
+        request.getResumeContent() == null ? 0 : request.getResumeContent().length());
+
     InterviewResult session = sessionService.getValidatedSession(sessionId, userId);
 
     InterviewSetting setting =

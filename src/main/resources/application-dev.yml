@@ -40,6 +40,18 @@ spring:
               - email
               - profile
 
+grpc:
+  client:
+    ai-server:
+      max-inbound-message-size: 104857600
+      max-outbound-message-size: 104857600
+      enable-keep-alive: true
+      keep-alive-time: 60s
+      keep-alive-timeout: 20s
+      keepalive-without-calls: true
+      idle-timeout: 5m
+      max-retry-attempts: 3
+
 logging:
   level:
     root: INFO

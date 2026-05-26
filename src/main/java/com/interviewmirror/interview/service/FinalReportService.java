@@ -77,13 +77,28 @@ public class FinalReportService {
         new StreamObserver<FinalReportResponse>() {
           @Override
           public void onNext(FinalReportResponse response) {
+            log.info(
+                "[gRPC] 최종 리포트 응답 수신 sessionId={} strengthCount={} weaknessCount={} questionFeedbackCount={}",
+                sessionId,
+                response.getStrengthsCount(),
+                response.getWeaknessesCount(),
+                response.getQuestionFeedbacksCount());
             interviewService.saveReportFromGrpc(sessionId, response);
           }
 
           @Override
           public void onError(Throwable t) {
             boolean retryable = isRetryable(t);
-            log.error("[gRPC] 최종 리포트 생성 실패 sessionId={} retryable={}", sessionId, retryable, t);
+            String errorMsg = t.getMessage() != null ? t.getMessage() : t.toString();
+            if (t.getCause() != null) {
+              errorMsg += " (원인: " + t.getCause().getMessage() + ")";
+            }
+            log.error(
+                "[gRPC] 최종 리포트 생성 실패 sessionId={} retryable={} error={}",
+                sessionId,
+                retryable,
+                errorMsg,
+                t);
             interviewService.markReportStatus(
                 sessionId, retryable ? ReportStatus.PENDING : ReportStatus.FAILED);
           }

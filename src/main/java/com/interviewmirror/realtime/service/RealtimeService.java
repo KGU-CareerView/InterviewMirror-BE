@@ -11,6 +11,7 @@ import com.interviewmirror.realtime.dto.RealtimeAudioFeatures;
 import com.interviewmirror.realtime.dto.RealtimeAudioRequest;
 import com.interviewmirror.realtime.dto.RealtimeEndRequest;
 import com.interviewmirror.realtime.dto.RealtimeFrameRequest;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,11 @@ public class RealtimeService {
   private static final double TOO_QUIET_RMS_THRESHOLD = 0.015;
 
   public void analyzeAudio(RealtimeAudioRequest request) {
-    RealtimeAudioFeatures features = request.getFeatures();
+    List<RealtimeAudioFeatures> windows = request.getWindows();
+    if (windows == null || windows.isEmpty()) {
+      return;
+    }
+    RealtimeAudioFeatures features = aggregateWindows(windows);
     Long sessionIdLong = Long.parseLong(request.getSessionId());
 
     if (Boolean.TRUE.equals(features.getIsSpeaking())) {
@@ -66,6 +71,114 @@ public class RealtimeService {
       redisSessionService.appendZcrSample(
           sessionIdLong, request.getQuestionIndex(), features.getZeroCrossingRate());
     }
+
+    if (request.getTranscript() != null && !request.getTranscript().isBlank()) {
+      String currentTranscript = request.getTranscript();
+      String previousTranscript =
+          redisSessionService.getTranscript(sessionIdLong, request.getQuestionIndex());
+
+      String cumulativeTranscript = currentTranscript;
+      if (previousTranscript != null && !previousTranscript.isBlank()) {
+        cumulativeTranscript = previousTranscript + " " + currentTranscript;
+      }
+
+      redisSessionService.setTranscript(
+          sessionIdLong, request.getQuestionIndex(), cumulativeTranscript);
+
+      log.info(
+          "[TRANSCRIPT] 누적 저장 sessionId={} questionIndex={} currentLen={} accumulatedLen={}",
+          request.getSessionId(),
+          request.getQuestionIndex(),
+          currentTranscript.length(),
+          cumulativeTranscript.length());
+    }
+  }
+
+  private String resolveAnswerWithAccumulatedTranscript(RealtimeAnswerRequest request) {
+    String original = request.getAnswer();
+    if (request.getQuestionIndex() == null) {
+      return original;
+    }
+
+    boolean isPlaceholder =
+        original == null
+            || original.isBlank()
+            || "사용자가 답변을 완료했습니다.".equalsIgnoreCase(original.trim());
+
+    String accumulated =
+        redisSessionService.getTranscript(request.getSessionId(), request.getQuestionIndex());
+
+    if (accumulated == null || accumulated.isBlank()) {
+      if (isPlaceholder) {
+        log.warn(
+            "[TRANSCRIPT] placeholder 답변이지만 누적 transcript 없음 sessionId={} questionIndex={}",
+            request.getSessionId(),
+            request.getQuestionIndex());
+      }
+      return original;
+    }
+
+    if (isPlaceholder) {
+      log.info(
+          "[TRANSCRIPT] placeholder 답변을 누적 transcript로 대체 sessionId={} questionIndex={} accumulatedLen={}",
+          request.getSessionId(),
+          request.getQuestionIndex(),
+          accumulated.length());
+      return accumulated;
+    }
+
+    log.info(
+        "[TRANSCRIPT] 원본 답변 사용 (placeholder 아님) sessionId={} questionIndex={} originalLen={}",
+        request.getSessionId(),
+        request.getQuestionIndex(),
+        original.length());
+    return original;
+  }
+
+  private RealtimeAudioFeatures aggregateWindows(List<RealtimeAudioFeatures> windows) {
+    int size = windows.size();
+    double rmsSum = 0.0;
+    int rmsCount = 0;
+    double zcrSum = 0.0;
+    int zcrCount = 0;
+    boolean anySpeaking = false;
+    long speechMsSum = 0L;
+    long silenceMsSum = 0L;
+    double peakMax = 0.0;
+    boolean peakSeen = false;
+
+    for (RealtimeAudioFeatures w : windows) {
+      if (w.getRms() != null) {
+        rmsSum += w.getRms();
+        rmsCount++;
+      }
+      if (w.getZeroCrossingRate() != null) {
+        zcrSum += w.getZeroCrossingRate();
+        zcrCount++;
+      }
+      if (Boolean.TRUE.equals(w.getIsSpeaking())) {
+        anySpeaking = true;
+      }
+      if (w.getSpeechDurationMs() != null) {
+        speechMsSum += w.getSpeechDurationMs();
+      }
+      if (w.getSilenceDurationMs() != null) {
+        silenceMsSum += w.getSilenceDurationMs();
+      }
+      if (w.getPeakAmplitude() != null) {
+        peakMax = peakSeen ? Math.max(peakMax, w.getPeakAmplitude()) : w.getPeakAmplitude();
+        peakSeen = true;
+      }
+    }
+
+    return RealtimeAudioFeatures.builder()
+        .rms(rmsCount > 0 ? rmsSum / rmsCount : null)
+        .zeroCrossingRate(zcrCount > 0 ? zcrSum / zcrCount : null)
+        .isSpeaking(anySpeaking)
+        .speechDurationMs(speechMsSum)
+        .silenceDurationMs(silenceMsSum)
+        .peakAmplitude(peakSeen ? peakMax : null)
+        .build();
   }
 
   public void analyzeFrame(RealtimeFrameRequest request) {
@@ -94,16 +207,18 @@ public class RealtimeService {
 
   public void submitAnswer(RealtimeAnswerRequest request) {
     try {
+      String resolvedAnswer = resolveAnswerWithAccumulatedTranscript(request);
       log.info(
-          "Processing submitted answer: sessionId={} answerLength={} emotionResult={} responseTimeSeconds={}",
+          "Processing submitted answer: sessionId={} questionIndex={} answerLength={} emotionResult={} responseTimeSeconds={}",
           request.getSessionId(),
-          request.getAnswer().length(),
+          request.getQuestionIndex(),
+          resolvedAnswer.length(),
           request.getEmotionResult(),
           request.getResponseTimeSeconds());
       String previousQuestion =
           sessionService.recordAnswer(
               request.getSessionId(),
-              request.getAnswer(),
+              resolvedAnswer,
               request.getEmotionResult(),
               request.getResponseTimeSeconds(),
               request.getAudioSummary());
@@ -113,7 +228,7 @@ public class RealtimeService {
           request.getSessionId(),
           preview(previousQuestion));
       questionGenerationService.generateFollowUpQuestion(
-          request.getSessionId(), previousQuestion, request.getAnswer());
+          request.getSessionId(), previousQuestion, resolvedAnswer);
     } catch (RuntimeException e) {
       ErrorCode errorCode =
           e instanceof InterviewException interviewException

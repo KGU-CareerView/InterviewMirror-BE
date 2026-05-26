@@ -88,6 +88,17 @@ public class RedisSessionService {
     redisTemplate.delete("session:" + sessionId + ":silence_windows");
   }
 
+  public void setTranscript(Long sessionId, int questionIndex, String transcript) {
+    String key = "session:" + sessionId + ":transcript:" + questionIndex;
+    redisTemplate.opsForValue().set(key, transcript, Duration.ofHours(2));
+  }
+
+  public String getTranscript(Long sessionId, int questionIndex) {
+    String key = "session:" + sessionId + ":transcript:" + questionIndex;
+    Object value = redisTemplate.opsForValue().get(key);
+    return value != null ? value.toString() : null;
+  }
+
   public void appendZcrSample(Long sessionId, int questionIndex, double zcr) {
     String key = "session:" + sessionId + ":zcr:" + questionIndex;
     redisTemplate.opsForList().rightPush(key, String.valueOf(zcr));

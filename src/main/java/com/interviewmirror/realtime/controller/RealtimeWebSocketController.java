@@ -40,17 +40,14 @@ public class RealtimeWebSocketController {
   @MessageMapping("/realtime.audio")
   public void analyzeAudio(@Valid @Payload RealtimeAudioRequest request) {
     log.info(
-        "[WebSocket REQUEST] destination=/app/realtime.audio payload={{sessionId={}, userId={}, timestamp={}, questionIndex={}, windowMs={}, isSpeaking={}, rms={}, zcr={}, speechDurationMs={}, silenceDurationMs={}}}",
+        "[WebSocket REQUEST] destination=/app/realtime.audio payload={{sessionId={}, userId={}, timestamp={}, questionIndex={}, windowMs={}, windowCount={}, transcriptLen={}}}",
         request.getSessionId(),
         request.getUserId(),
         request.getTimestamp(),
         request.getQuestionIndex(),
         request.getWindowMs(),
-        request.getFeatures().getIsSpeaking(),
-        request.getFeatures().getRms(),
-        request.getFeatures().getZeroCrossingRate(),
-        request.getFeatures().getSpeechDurationMs(),
-        request.getFeatures().getSilenceDurationMs());
+        request.getWindows() == null ? 0 : request.getWindows().size(),
+        request.getTranscript() == null ? 0 : request.getTranscript().length());
     realtimeService.analyzeAudio(request);
   }
 
@@ -70,11 +67,17 @@ public class RealtimeWebSocketController {
 
   @MessageMapping("/session.answer")
   public void submitAnswer(@Valid @Payload RealtimeAnswerRequest request) {
+    String answerPreview = preview(request.getAnswer());
+    boolean isPlaceholder =
+        request.getAnswer() == null
+            || request.getAnswer().isBlank()
+            || "사용자가 답변을 완료했습니다.".equalsIgnoreCase(request.getAnswer().trim());
     log.info(
-        "[WebSocket REQUEST] destination=/app/session.answer payload={{sessionId={}, answerLength={}, answerPreview={}, emotionResult={}, responseTimeSeconds={}}}",
+        "[WebSocket REQUEST] destination=/app/session.answer payload={{sessionId={}, answerLength={}, isPlaceholder={}, answerPreview={}, emotionResult={}, responseTimeSeconds={}}}",
         request.getSessionId(),
         request.getAnswer().length(),
-        preview(request.getAnswer()),
+        isPlaceholder,
+        answerPreview,
         request.getEmotionResult(),
         request.getResponseTimeSeconds());
     realtimeService.submitAnswer(request);

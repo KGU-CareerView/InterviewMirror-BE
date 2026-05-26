@@ -55,6 +55,14 @@ grpc:
     ai-server:
       address: "static://${AI_SERVER_HOST:localhost}:${AI_SERVER_PORT:50051}"
       negotiation-type: ${GRPC_NEGOTIATION_TYPE:plaintext}
+      max-inbound-message-size: 104857600
+      max-outbound-message-size: 104857600
+      enable-keep-alive: true
+      keep-alive-time: 120s
+      keep-alive-timeout: 90s
+      keepalive-without-calls: true
+      idle-timeout: 5m
+      max-retry-attempts: 3
 
 realtime:
   buffer:

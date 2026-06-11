@@ -73,7 +73,8 @@ class SessionServiceTest {
     given(redisSessionService.getLastQuestion(sessionId)).willReturn("이전 질문입니다.");
     given(resultRepository.findById(sessionId)).willReturn(Optional.of(mockResult));
 
-    String previousQuestion = sessionService.recordAnswer(sessionId, null, answer, "HAPPY", 15, null);
+    String previousQuestion =
+        sessionService.recordAnswer(sessionId, null, answer, "HAPPY", 15, null);
 
     assertThat(previousQuestion).isEqualTo("이전 질문입니다.");
     verify(detailRepository).save(any(InterviewDetail.class));

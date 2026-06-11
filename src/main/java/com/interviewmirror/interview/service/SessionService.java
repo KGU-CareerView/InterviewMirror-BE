@@ -54,12 +54,16 @@ public class SessionService {
   @Transactional
   public String recordAnswer(
       Long sessionId,
+      String question,
       String answer,
       String emotionResult,
       Integer responseTimeSeconds,
       AudioSummaryDto audioSummary) {
-    String question = redisSessionService.getLastQuestion(sessionId);
-    String safeQuestion = (question != null) ? question : "";
+    String resolvedQuestion =
+        (question != null && !question.isBlank())
+            ? question
+            : redisSessionService.getLastQuestion(sessionId);
+    String safeQuestion = (resolvedQuestion != null) ? resolvedQuestion : "";
 
     String safeAnswer = sanitizePlaceholder(sessionId, answer);
     logSttQuality(sessionId, safeAnswer, responseTimeSeconds);

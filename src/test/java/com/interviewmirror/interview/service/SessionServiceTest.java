@@ -3,6 +3,7 @@ package com.interviewmirror.interview.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.interviewmirror.infrastructure.S3Service;
@@ -72,9 +73,32 @@ class SessionServiceTest {
     given(redisSessionService.getLastQuestion(sessionId)).willReturn("이전 질문입니다.");
     given(resultRepository.findById(sessionId)).willReturn(Optional.of(mockResult));
 
-    String previousQuestion = sessionService.recordAnswer(sessionId, answer, "HAPPY", 15, null);
+    String previousQuestion = sessionService.recordAnswer(sessionId, null, answer, "HAPPY", 15, null);
 
     assertThat(previousQuestion).isEqualTo("이전 질문입니다.");
     verify(detailRepository).save(any(InterviewDetail.class));
+  }
+
+  @Test
+  @DisplayName("답변 기록 시 프론트엔드가 보낸 질문 텍스트를 우선 사용한다.")
+  void recordAnswerTest_PrefersProvidedQuestion() {
+    Long sessionId = 1L;
+    String answer = "이것은 답변입니다.";
+    String providedQuestion = "두 번째 질문입니다.";
+    InterviewResult mockResult =
+        InterviewResult.builder()
+            .sessionId(sessionId)
+            .userId(1L)
+            .sessionState(InterviewSessionState.IN_PROGRESS.name())
+            .build();
+
+    given(resultRepository.findById(sessionId)).willReturn(Optional.of(mockResult));
+
+    String previousQuestion =
+        sessionService.recordAnswer(sessionId, providedQuestion, answer, "HAPPY", 15, null);
+
+    assertThat(previousQuestion).isEqualTo(providedQuestion);
+    verify(detailRepository).save(any(InterviewDetail.class));
+    verify(redisSessionService, never()).getLastQuestion(sessionId);
   }
 }

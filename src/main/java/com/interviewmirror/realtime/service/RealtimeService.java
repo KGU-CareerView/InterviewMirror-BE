@@ -218,17 +218,24 @@ public class RealtimeService {
       String previousQuestion =
           sessionService.recordAnswer(
               request.getSessionId(),
+              request.getQuestion(),
               resolvedAnswer,
               request.getEmotionResult(),
               request.getResponseTimeSeconds(),
               request.getAudioSummary());
 
-      log.info(
-          "Answer recorded, requesting follow-up question: sessionId={} previousQuestionPreview={}",
-          request.getSessionId(),
-          preview(previousQuestion));
-      questionGenerationService.generateFollowUpQuestion(
-          request.getSessionId(), previousQuestion, resolvedAnswer);
+      if (Boolean.TRUE.equals(request.getRequestNextQuestion())) {
+        log.info(
+            "Answer recorded, requesting follow-up question: sessionId={} previousQuestionPreview={}",
+            request.getSessionId(),
+            preview(previousQuestion));
+        questionGenerationService.generateFollowUpQuestion(
+            request.getSessionId(), previousQuestion, resolvedAnswer);
+      } else {
+        log.info(
+            "Answer recorded without follow-up question request: sessionId={}",
+            request.getSessionId());
+      }
     } catch (RuntimeException e) {
       ErrorCode errorCode =
           e instanceof InterviewException interviewException
